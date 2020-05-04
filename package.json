@@ -1,0 +1,61 @@
+{
+  "name": "uranus-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:hp0912/uranus-backend.git",
+  "author": "809211365@qq.com",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cross-env node -r ts-node/register -r tsconfig-paths/register ./index.ts"
+  },
+  "config": {
+    "ghooks": {
+      "commit-msg": "validate-commit-msg"
+    },
+    "validate-commit-msg": {
+      "types": [
+        "feat",
+        "fix",
+        "docs",
+        "test",
+        "chore",
+        "refactor",
+        "opti",
+        "style"
+      ],
+      "warnOnFail": false,
+      "maxSubjectLength": 100,
+      "subjectPattern": ".+",
+      "subjectPatternErrorMsg": "请输入message信息!",
+      "helpMessage": "Commit message 格式错误, \n请查看规范: http://wiki.corp.qunar.com/pages/viewpage.action?pageId=159698767"
+    }
+  },
+  "dependencies": {
+    "@hasezoey/typegoose": "^5.9.2",
+    "@types/jsonwebtoken": "^8.3.9",
+    "@types/mongoose": "^5.7.14",
+    "class-transformer": "^0.2.3",
+    "class-validator": "^0.12.2",
+    "cross-env": "^7.0.2",
+    "jsonwebtoken": "^8.5.1",
+    "koa": "^2.11.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^8.0.0-alpha.1",
+    "mongoose": "^5.9.11",
+    "mongoose-auto-increment": "^5.0.1",
+    "reflect-metadata": "^0.1.13",
+    "routing-controllers": "^0.8.1",
+    "typedi": "^0.8.0",
+    "typescript": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.11.3",
+    "@types/mongoose-auto-increment": "^5.0.33",
+    "babel-plugin-import": "^1.13.0",
+    "ghooks": "^2.0.4",
+    "ts-node": "^8.10.1",
+    "tsconfig-paths": "^3.9.0",
+    "tslint": "^6.1.2",
+    "validate-commit-msg": "^2.14.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "tslint:recommended"
+  ],
+  "linterOptions": {
+    "exclude": [
+      "node_modules/**/*.ts"
+    ]
+  },
+  "rules": {
+    "interface-name": true,
+    "object-literal-sort-keys": false,
+    "quotemark": false,
+    "member-access": false,
+    "no-var-requires": false,
+    "no-console": false,
+    "radix": false,
+    "arrow-parens": false,
+    "max-classes-per-file": false,
+    "no-trailing-whitespace": false,
+    "variable-name": false,
+    "prefer-for-of": false,
+    "semicolon": true,
+    "ordered-imports": true
+  }
+}
