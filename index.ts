@@ -1,4 +1,5 @@
 import Koa from 'koa';
+import cors from 'koa2-cors';
 import "reflect-metadata";
 import { Action, useContainer, useKoaServer as UseKoaServer } from "routing-controllers";
 import { Container } from 'typedi';
@@ -10,6 +11,16 @@ import { connect } from "./utils/mongodb";
 
 async function start() {
   const app = new Koa();
+
+  app.use(cors({
+    origin: (ctx) => {
+      return 'http://localhost:3000';
+    },
+    maxAge: 3600,
+    credentials: true,
+    allowMethods: ['GET', 'POST'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  }));
 
   await connect();
 
@@ -37,7 +48,7 @@ async function start() {
 
   app.listen(config.server_port);
 
-  console.log(`URANUS以${config.server_port}端口启动服务成功了~~~`);
+  console.log(`URANUS 以${config.server_port}端口启动服务成功了~~~`);
 }
 
 start();

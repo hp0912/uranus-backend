@@ -767,6 +767,11 @@ koa-router@^8.0.0-alpha.1:
     methods "^1.1.2"
     path-to-regexp "1.7"
 
+koa2-cors@^2.0.6:
+  version "2.0.6"
+  resolved "https://registry.npm.taobao.org/koa2-cors/download/koa2-cors-2.0.6.tgz#9ad23df3a0b9bb84530b46f5944f3fb576086554"
+  integrity sha1-mtI986C5u4RTC0b1lE8/tXYIZVQ=
+
 koa@^2.11.0:
   version "2.11.0"
   resolved "https://registry.npm.taobao.org/koa/download/koa-2.11.0.tgz?cache=0&sync_timestamp=1572232118391&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fkoa%2Fdownload%2Fkoa-2.11.0.tgz#fe5a51c46f566d27632dd5dc8fd5d7dd44f935a4"
@@ -1048,6 +1053,11 @@ process-nextick-args@~2.0.0:
   version "2.0.1"
   resolved "https://registry.npm.taobao.org/process-nextick-args/download/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
   integrity sha1-eCDZsWEgzFXKmud5JoCufbptf+I=
+
+qcloudsms_js@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.npm.taobao.org/qcloudsms_js/download/qcloudsms_js-0.1.1.tgz#e042b683ba1312a20d7dd0322446f20fd3dc644a"
+  integrity sha1-4EK2g7oTEqINfdAyJEbyD9PcZEo=
 
 qs@^6.5.2:
   version "6.9.4"

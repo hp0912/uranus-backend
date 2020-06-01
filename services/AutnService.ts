@@ -35,8 +35,8 @@ export default class AutnService {
 
   setCookie(ctx, uid: number, passsalt: string) {
     const token = jwt.sign({ uid }, passsalt, { expiresIn: '7 days' });
-    const date = new Date();
-    const expires = date.setTime(date.getTime() + 7 * 86400 * 1000);
+    const expires = new Date();
+    expires.setTime(expires.getTime() + 7 * 86400 * 1000);
 
     ctx.cookies.set('_uranus_token', token, {
       expires,
