@@ -6,7 +6,7 @@
   "author": "809211365@qq.com",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env node -r ts-node/register -r tsconfig-paths/register ./index.ts"
+    "dev": "cross-env config_url=http://127.0.0.1:9001 node -r ts-node/register -r tsconfig-paths/register ./index.ts"
   },
   "config": {
     "ghooks": {
@@ -31,9 +31,11 @@
     }
   },
   "dependencies": {
+    "@alicloud/pop-core": "^1.7.9",
     "@hasezoey/typegoose": "^5.9.2",
     "@types/jsonwebtoken": "^8.3.9",
     "@types/mongoose": "^5.7.14",
+    "axios": "^0.19.2",
     "class-transformer": "^0.2.3",
     "class-validator": "^0.12.2",
     "cross-env": "^7.0.2",
@@ -44,7 +46,6 @@
     "koa2-cors": "^2.0.6",
     "mongoose": "^5.9.11",
     "mongoose-auto-increment": "^5.0.1",
-    "qcloudsms_js": "^0.1.1",
     "reflect-metadata": "^0.1.13",
     "routing-controllers": "^0.8.1",
     "typedi": "^0.8.0",

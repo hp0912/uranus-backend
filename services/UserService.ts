@@ -1,34 +1,42 @@
+import alicloudSms from '@alicloud/pop-core';
 import * as jwt from 'jsonwebtoken';
-import QcloudSms from 'qcloudsms_js';
 import { /* Inject, */ Service } from 'typedi';
+import config from '../config';
 
 @Service()
 export default class UserService {
 
+  smsClient = new alicloudSms({
+    accessKeyId: config.accessKeyId,
+    accessKeySecret: config.accessKeySecret,
+    endpoint: 'https://dysmsapi.aliyuncs.com',
+    apiVersion: '2017-05-25',
+  });
+
   async getSmsCode(ctx, phoneNumber: string): Promise<void> {
-    const appid = 'xxxx'; // config.smsappid
-    const appkey = 'xxxx'; // config.smsappkey
-    const phoneNumbers = [phoneNumber];
-    const templateId = 191869;
-    const smsSign = '嗷呜的个人主页';
-    const sms = QcloudSms(appid, appkey);
     const smsCode = (Math.random() + '').substr(2, 6);
-    const ssender = sms.SmsSingleSender();
-    const params = [smsCode];
+    const params = {
+      RegionId: 'cn-hangzhou',
+      PhoneNumbers: phoneNumber,
+      SignName: '吼吼的个人博客',
+      TemplateCode: 'SMS_192150022',
+      TemplateParam: `{ code: ${smsCode} }`,
+    };
 
     if (!phoneNumber.match(/^[1][3578]\d{9}$/)) {
       throw new Error('请输入正确的手机号');
     }
 
-    ssender.sendWithParam(86, phoneNumbers[0], templateId, params, smsSign, '', '', (err, res, resData) => {
-      if (err) {
-        console.error('err: ', err.message, phoneNumber, smsCode);
-      } else {
-        console.log('发送验证码成功', phoneNumber, smsCode);
-      }
+    await new Promise((resolve, reject) => {
+      this.smsClient.request('SendSms', params, { method: 'POST' }).then((result) => {
+        console.log('短信验证码: ', phoneNumber, JSON.stringify(result));
+        resolve();
+      }, (ex) => {
+        reject(ex.message);
+      });
     });
 
-    const token = jwt.sign({ phoneNumber, smsCode }, 'passsalt', { expiresIn: '10m' }); // 十分钟内有效
+    const token = jwt.sign({ phoneNumber, smsCode }, config.passsalt, { expiresIn: '10m' }); // 十分钟内有效
     const expires = new Date();
     expires.setTime(expires.getTime() + 7 * 86400 * 1000);
 
