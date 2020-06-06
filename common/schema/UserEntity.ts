@@ -1,18 +1,20 @@
-import { plugin, prop, Typegoose } from '@hasezoey/typegoose';
-import autoIncrement from "mongoose-auto-increment";
+import { index, prop } from '@typegoose/typegoose';
 
-@plugin(autoIncrement.plugin, {
-  model: 'user',
-  startAt: 1,
-  incrementBy: 5,
-})
-export class UserEntity extends Typegoose {
-  @prop({ required: true })
-  id?: number;
+@index({ username: 1 }, { unique: true })
+export class UserEntity {
+  _id?: string;
+
+  id?: string;
 
   @prop({ required: true })
   username?: string;
 
+  @prop({ required: false })
+  nickname?: string;
+
   @prop({ required: true })
-  passsalt?: string;
+  password?: string;
+
+  @prop({ required: false })
+  lastAction?: number;
 }

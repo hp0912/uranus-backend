@@ -14,13 +14,13 @@ export default class AutnService {
 
     if (token && uid) {
       try {
-        const result = await this.userModel.findOne({ id: uid });
+        const result = await this.userModel.findOne({ username: uid + '' });
 
         if (!result) {
           return null;
         }
         
-        const decoded = jwt.verify(token, result.passsalt as string) as any;
+        const decoded = jwt.verify(token, result.password as string) as any;
 
         if (decoded.uid === uid) {
           return result;

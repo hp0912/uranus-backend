@@ -7,7 +7,7 @@ export default class ErrorMiddleware implements KoaMiddlewareInterface {
     try {
       await next();
     } catch (ex) {
-      context.body = { code: ex.code, message: ex.message, data: null };
+      context.body = { code: 500, message: ex.message, data: null };
     }
   }
 }

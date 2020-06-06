@@ -1,3 +1,4 @@
+import { getModelForClass } from '@typegoose/typegoose';
 import { Service } from "typedi";
 import { UserEntity } from "../common/schema/UserEntity";
 import BaseModel from './BaseModel';
@@ -9,7 +10,7 @@ export default class UserModel extends BaseModel<UserEntity> {
   }
 
   getModelForClass() {
-    const modelForClass = new UserEntity().getModelForClass(UserEntity, {
+    const modelForClass = getModelForClass(UserEntity, {
       schemaOptions: {
         collection: this.getName(),
         toObject: {
