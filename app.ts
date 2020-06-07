@@ -18,7 +18,7 @@ export async function start() {
     },
     maxAge: 3600,
     credentials: true,
-    allowMethods: ['GET', 'POST'],
+    allowMethods: ['GET', 'POST', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   }));
 

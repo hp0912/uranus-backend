@@ -29,6 +29,33 @@ export default class UserService {
     apiVersion: '2017-05-25',
   });
 
+  async status(ctx): Promise<UserEntity> {
+    const session = ctx.cookies.get('uranus_session');
+
+    let decoded: any = null;
+
+    try {
+      decoded = jwt.verify(session, config.passsalt);
+    } catch {
+      return null;
+    }
+
+    const { userId: _id, lastLoginTime } = decoded;
+
+    if (!_id || !lastLoginTime) {
+      return null;
+    }
+
+    const user = await this.userModel.findOne({ _id, lastLoginTime });
+
+    delete user.id;
+    delete user.password;
+    delete user.lastLoginTime;
+    delete (user as any).__v;
+
+    return user;
+  }
+
   async getSmsCode(ctx, phoneNumber: string): Promise<void> {
     const smsCode = (Math.random() + '').substr(2, 6);
     const params = {
@@ -87,19 +114,23 @@ export default class UserService {
       throw new Error('用户名或密码错误');
     }
 
-    const lastAction = Date.now();
+    const lastLoginTime = Date.now();
 
-    await this.userModel.findOneAndUpdate({ _id: user.id }, { lastAction });
+    await this.userModel.findOneAndUpdate({ _id: user.id }, { lastLoginTime });
 
-    const session = jwt.sign({ userId: user.id, lastAction }, config.passsalt, { expiresIn: '7 days' });
+    const session = jwt.sign({ userId: user.id, lastLoginTime }, config.passsalt, { expiresIn: '7 days' });
     this.setToken(ctx, session);
 
     delete user.id;
     delete user.password;
-    delete user.lastAction;
+    delete user.lastLoginTime;
     delete (user as any).__v;
 
     return user;
+  }
+
+  async signOut(ctx): Promise<void> {
+    this.setToken(ctx, null);
   }
 
   async resetPassword(ctx, data: ISignUpParams): Promise<void> {
@@ -108,17 +139,17 @@ export default class UserService {
     this.verify(ctx, data);
 
     const IsRegExist = await this.userModel.findOne({ username });
-    const lastAction = Date.now();
+    const lastLoginTime = Date.now();
     const passwordSha1 = sha1(password + sha1(config.passsalt));
-    
+
     if (IsRegExist) {
-      await this.userModel.findOneAndUpdate({ _id: IsRegExist.id }, { password: passwordSha1, lastAction });
+      await this.userModel.findOneAndUpdate({ _id: IsRegExist.id }, { password: passwordSha1, lastLoginTime });
     } else {
       const user: UserEntity = {
         username,
         nickname: username,
         password: passwordSha1,
-        lastAction,
+        lastLoginTime,
       };
 
       await this.userModel.save(user);
@@ -145,7 +176,7 @@ export default class UserService {
     } catch {
       throw new Error('验证码已过期');
     }
-    
+
     if (!decoded) {
       throw new Error('会话信息已过期');
     }

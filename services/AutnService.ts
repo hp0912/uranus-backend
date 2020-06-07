@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { Inject, Service } from "typedi";
 import { UserEntity } from '../common/schema/UserEntity';
+import config from '../config';
 import UserModel from "../models/UserModel";
 
 @Service()
@@ -9,42 +10,19 @@ export default class AutnService {
   private userModel: UserModel;
 
   async checkLogin(ctx): Promise<UserEntity> {
-    const token = ctx.cookies.get('_uranus_token');
-    const uid = parseInt(ctx.cookies.get('_uranus_uid'), 10);
+    const session = ctx.cookies.get('uranus_session');
 
-    if (token && uid) {
-      try {
-        const result = await this.userModel.findOne({ username: uid + '' });
+    let decoded: any = null;
 
-        if (!result) {
-          return null;
-        }
-        
-        const decoded = jwt.verify(token, result.password as string) as any;
-
-        if (decoded.uid === uid) {
-          return result;
-        }
-      } catch (e) {
-        console.error(e);
-      }
+    try {
+      decoded = jwt.verify(session, config.passsalt);
+    } catch {
+      throw new Error('登录信息已过期');
     }
 
-    return null;
-  }
+    const { userId: _id, lastLoginTime } = decoded;
+    const user = await this.userModel.findOne({ _id, lastLoginTime });
 
-  setCookie(ctx, uid: number, passsalt: string) {
-    const token = jwt.sign({ uid }, passsalt, { expiresIn: '7 days' });
-    const expires = new Date();
-    expires.setTime(expires.getTime() + 7 * 86400 * 1000);
-
-    ctx.cookies.set('_uranus_token', token, {
-      expires,
-      httpOnly: true,
-    });
-    ctx.cookies.set('_uranus_uid', uid, {
-      expires,
-      httpOnly: true,
-    });
+    return user;
   }
 }
