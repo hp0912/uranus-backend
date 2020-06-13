@@ -1,4 +1,4 @@
-import { Body, Ctx, Delete, Get, /* Authorized, CurrentUser, */ JsonController/* QueryParam */, Post } from "routing-controllers";
+import { Body, Ctx, Delete, Get, JsonController, Post } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { UserEntity } from "../common/schema/UserEntity";
 import { IHttpResult } from "../common/types/commom";

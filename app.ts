@@ -4,6 +4,7 @@ import "reflect-metadata";
 import { Action, useContainer, useKoaServer as UseKoaServer } from "routing-controllers";
 import { Container } from 'typedi';
 import config from "./config";
+import { TagController } from './controllers/TagController';
 import { UserController } from './controllers/UserController';
 import ErrorMiddleware from './middleware/ErrorMiddleware';
 import AutnService from './services/AutnService';
@@ -27,13 +28,22 @@ export async function start() {
   useContainer(Container);
 
   UseKoaServer(app, {
-    authorizationChecker: async (action: Action): Promise<boolean> => {
+    authorizationChecker: async (action: Action, roles: number[]): Promise<boolean> => {
       const user = await Container.get<AutnService>(AutnService).checkLogin(action.context);
       action.context.user = user;
       if (!user) {
         throw new Error('请重新登录');
       }
-      return !!user;
+
+      if (!roles.length) {
+        return true;
+      }
+
+      if (user.accessLevel >= roles[0]) {
+        return true;
+      }
+
+      return false;
     },
     currentUserChecker: async (action: Action) => {
       return action.context.user;
@@ -41,6 +51,7 @@ export async function start() {
     defaultErrorHandler: false,
     routePrefix: '/api',
     controllers: [
+      TagController,
       UserController,
     ],
     middlewares: [ErrorMiddleware],
