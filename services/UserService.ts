@@ -48,7 +48,6 @@ export default class UserService {
 
     const user = await this.userModel.findOne({ _id, lastLoginTime });
 
-    delete user.id;
     delete user.password;
     delete user.lastLoginTime;
     delete (user as any).__v;
@@ -114,6 +113,10 @@ export default class UserService {
       throw new Error('用户名或密码错误');
     }
 
+    if (!user.activated) {
+      throw new Error('该用户已被注销');
+    }
+
     const lastLoginTime = Date.now();
 
     await this.userModel.findOneAndUpdate({ _id: user.id }, { lastLoginTime });
@@ -121,7 +124,6 @@ export default class UserService {
     const session = jwt.sign({ userId: user.id, lastLoginTime }, config.passsalt, { expiresIn: '7 days' });
     this.setToken(ctx, session);
 
-    delete user.id;
     delete user.password;
     delete user.lastLoginTime;
     delete (user as any).__v;

@@ -21,7 +21,7 @@ export default class AutnService {
     }
 
     const { userId: _id, lastLoginTime } = decoded;
-    const user = await this.userModel.findOne({ _id, lastLoginTime });
+    const user = await this.userModel.findOne({ _id, lastLoginTime, activated: true });
 
     return user;
   }

@@ -16,6 +16,10 @@ const config = {
   qcloudSecretKey: '', // 腾讯云SecretKey
   accessKeyId: '', // 阿里云
   accessKeySecret: '', // 阿里云
+  STSAccessKeyId: '', // 阿里云 sts临时授权
+  STSAccessKeySecret: '', // 阿里云 sts临时授权
+  STSRoleArn: '', // 阿里云 sts临时授权
+  STSPolicy: {}, // 阿里云 sts临时授权
   tencentkey: '', // 腾讯位置secreKey
   dxAppID: '', // 顶象登录验证
   dxAppSecret: '', // 顶象登录验证

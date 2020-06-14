@@ -496,6 +496,11 @@ cross-spawn@^7.0.1:
   resolved "https://registry.npm.taobao.org/crypt/download/crypt-0.0.2.tgz#88d7ff7ec0dfb86f713dc87bbb42d044d3e6c41b"
   integrity sha1-iNf/fsDfuG9xPch7u0LQRNPmxBs=
 
+crypto@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npm.taobao.org/crypto/download/crypto-1.0.1.tgz#2af1b7cad8175d24c8a1b0778255794a21803037"
+  integrity sha1-KvG3ytgXXSTIobB3glV5SiGAMDc=
+
 debug@3.1.0, debug@=3.1.0, debug@~3.1.0:
   version "3.1.0"
   resolved "https://registry.npm.taobao.org/debug/download/debug-3.1.0.tgz#5bb5a0672628b64149566ba16819e61518c67261"
