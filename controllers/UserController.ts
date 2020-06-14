@@ -1,4 +1,4 @@
-import { Body, Ctx, Delete, Get, JsonController, Post } from "routing-controllers";
+import { Authorized, Body, Ctx, CurrentUser, Delete, Get, JsonController, Post } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { UserEntity } from "../common/schema/UserEntity";
 import { IHttpResult } from "../common/types/commom";
@@ -17,6 +17,17 @@ export class UserController {
     const user = await this.userService.status(ctx);
 
     return { code: 200, message: '', data: user };
+  }
+
+  @Authorized()
+  @Post('/updateUserProfile')
+  async updateUserProfile(
+    @Body() data: UserEntity,
+    @CurrentUser() user?: UserEntity,
+  ): Promise<IHttpResult<UserEntity>> {
+    const userResult = await this.userService.updateUserProfile(data, user);
+
+    return { code: 200, message: '', data: userResult };
   }
 
   @Post('/getSmsCode')

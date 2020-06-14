@@ -49,6 +49,10 @@ export default class STSService {
   }
 
   async STSAuthForForm(filename: string, user: UserEntity): Promise<ISTSAuthForFormResult> {
+    if (filename.includes('/')) {
+      throw new Error('文件名不合法');
+    }
+
     const suffix = filename.slice(filename.lastIndexOf('.'));
 
     // 限制图片上传格式，系统管理员不受此限制
@@ -63,7 +67,7 @@ export default class STSService {
     const policyText = {
       expiration, // 设置Policy的失效时间，如果超过失效时间，就无法通过此Policy上传文件
       conditions: [
-        ["eq", "$key", filename],
+        ["eq", "$key", `uranus/user/${user.id}/${filename}`],
         ["content-length-range", 0, maxSize] // 设置上传文件的大小限制，如果超过限制，文件上传到OSS会报错
       ]
     };

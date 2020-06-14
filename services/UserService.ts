@@ -55,6 +55,45 @@ export default class UserService {
     return user;
   }
 
+  async updateUserProfile(data: UserEntity, user: UserEntity): Promise<UserEntity> {
+    if (!data?.avatar) {
+      throw new Error('用户头像不能为空');
+    }
+
+    if (!data?.nickname) {
+      throw new Error('用户昵称不能为空');
+    }
+
+    if (data?.nickname.length > 15) {
+      throw new Error('用户昵称不能大于15个字符');
+    }
+
+    if (data?.signature && data.signature.length > 30) {
+      throw new Error('用户签名不能大于30个字符');
+    }
+
+    if (data?.personalProfile && data.personalProfile.length > 200) {
+      throw new Error('用户简介不能大于200个字符');
+    }
+
+    const { avatar, nickname, signature, personalProfile } = data;
+
+    const userResult = await this.userModel.findOneAndUpdate(
+      { _id: user.id, lastLoginTime: user.lastLoginTime, activated: true },
+      { avatar, nickname, signature, personalProfile },
+    );
+
+    if (!userResult) {
+      throw new Error('登录信息已过期');
+    }
+
+    delete userResult.password;
+    delete userResult.lastLoginTime;
+    delete (userResult as any).__v;
+
+    return userResult;
+  }
+
   async getSmsCode(ctx, phoneNumber: string): Promise<void> {
     const smsCode = (Math.random() + '').substr(2, 6);
     const params = {
