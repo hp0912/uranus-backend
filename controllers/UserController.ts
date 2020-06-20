@@ -1,7 +1,7 @@
-import { Authorized, Body, Ctx, CurrentUser, Delete, Get, JsonController, Post } from "routing-controllers";
+import { Authorized, Body, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { UserEntity } from "../common/schema/UserEntity";
-import { IHttpResult } from "../common/types/commom";
+import { IHttpResult, IUser } from "../common/types/commom";
 import UserService, { ISignInParams, ISignUpParams } from "../services/UserService";
 
 @JsonController('/user')
@@ -19,15 +19,39 @@ export class UserController {
     return { code: 200, message: '', data: user };
   }
 
+  // 需要权限等级6以及以上的权限才能获取用户列表
+  @Authorized([6])
+  @Get('/admin/userList')
+  async userList(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+  ): Promise<IHttpResult<{ users: UserEntity[], total: number }>> {
+    const usersResult = await this.userService.userList({ current, pageSize, searchValue });
+
+    return { code: 200, message: '', data: usersResult };
+  }
+
   @Authorized()
   @Post('/updateUserProfile')
   async updateUserProfile(
-    @Body() data: UserEntity,
-    @CurrentUser() user?: UserEntity,
+    @Body() data: IUser,
+    @CurrentUser() user?: IUser,
   ): Promise<IHttpResult<UserEntity>> {
     const userResult = await this.userService.updateUserProfile(data, user);
 
     return { code: 200, message: '', data: userResult };
+  }
+
+  @Authorized([10])
+  @Post('/updateUserForAdmin')
+  async updateUserForAdmin(
+    @Body() data: IUser,
+  ): Promise<IHttpResult<UserEntity>> {
+    await this.userService.updateUserForAdmin(data);
+
+    return { code: 200, message: '', data: null };
   }
 
   @Post('/getSmsCode')

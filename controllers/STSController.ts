@@ -1,7 +1,6 @@
 import { Authorized, Ctx, CurrentUser, Get, JsonController, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
-import { UserEntity } from "../common/schema/UserEntity";
-import { IHttpResult } from "../common/types/commom";
+import { IHttpResult, IUser } from "../common/types/commom";
 import STSService, { ISTSAuthForFormResult, ISTSAuthResult } from "../services/STSService";
 
 @JsonController('/sts')
@@ -14,7 +13,7 @@ export class STSController {
   @Get('/stsAuth')
   async stsAuth(
     @Ctx() ctx,
-    @CurrentUser() user?: UserEntity,
+    @CurrentUser() user?: IUser,
   ): Promise<IHttpResult<ISTSAuthResult>> {
     const auth = await this.stsService.STSAuth(user);
 
@@ -26,7 +25,7 @@ export class STSController {
   async stsAuthForForm(
     @Ctx() ctx,
     @QueryParam("filename") filename: string,
-    @CurrentUser() user?: UserEntity,
+    @CurrentUser() user?: IUser,
   ): Promise<IHttpResult<ISTSAuthForFormResult>> {
     const auth = await this.stsService.STSAuthForForm(filename, user);
 

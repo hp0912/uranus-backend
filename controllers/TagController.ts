@@ -1,8 +1,7 @@
 import { Authorized, Body, Ctx, CurrentUser, Delete, Get, JsonController, Post } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { TagEntity } from "../common/schema/TagEntity";
-import { UserEntity } from "../common/schema/UserEntity";
-import { IHttpResult } from "../common/types/commom";
+import { IHttpResult, IUser } from "../common/types/commom";
 import TagService from "../services/TagService";
 
 @JsonController('/tag')
@@ -26,7 +25,7 @@ export class TagController {
   async tagSave(
     @Ctx() ctx,
     @Body() data: TagEntity,
-    @CurrentUser() user?: UserEntity,
+    @CurrentUser() user?: IUser,
   ): Promise<IHttpResult<TagEntity[]>> {
     const tags = await this.tagService.tagSave(data, user);
 

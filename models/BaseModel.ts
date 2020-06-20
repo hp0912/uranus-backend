@@ -36,7 +36,7 @@ export default abstract class BaseModel<M = any> {
 
   async getById(id: number): Promise<M | null> {
     const getByIdResult = await this.model.findById(id);
-    
+
     if (getByIdResult) {
       return getByIdResult.toObject({ minimize: false });
     }
@@ -66,7 +66,7 @@ export default abstract class BaseModel<M = any> {
     await this.model.updateMany(conditions, data, { new: true });
   }
 
-  async find(conditions: Partial<M>, select?: string): Promise<M[]> {
+  async find(conditions: Partial<M>, select?: string | { [column: string]: number }): Promise<M[]> {
     let documentQuery = this.model.find(conditions);
 
     if (select) {
@@ -78,7 +78,7 @@ export default abstract class BaseModel<M = any> {
     return this.toObject(anies);
   }
 
-  async distinct(field: string, conditions?: Partial<M>, select?: string): Promise<M[]> {
+  async distinct(field: string, conditions?: Partial<M>, select?: string | { [column: string]: number }): Promise<M[]> {
     let documentQuery = this.model.distinct(field, conditions);
     if (select) {
       documentQuery = documentQuery.select(select);
@@ -89,7 +89,7 @@ export default abstract class BaseModel<M = any> {
 
   async findAdvanced(options: {
     conditions: Partial<M>;
-    select?: string;
+    select?: string | { [column: string]: number };
     offset?: number;
     limit?: number;
     sorter?: any;
@@ -114,7 +114,7 @@ export default abstract class BaseModel<M = any> {
     return this.toObject(anies);
   }
 
-  async findOne(conditions: Partial<M>, select?: string): Promise<M | null> {
+  async findOne(conditions: Partial<M>, select?: string | { [column: string]: number }): Promise<M | null> {
     let documentQuery = this.model.findOne(conditions);
 
     if (select) {

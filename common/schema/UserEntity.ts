@@ -32,4 +32,7 @@ export class UserEntity {
 
   @prop({ required: true, default: true })
   activated?: boolean;
+
+  @prop({ required: true })
+  registerTime?: number;
 }

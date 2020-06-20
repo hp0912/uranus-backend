@@ -2,29 +2,28 @@ import mongoose, { ConnectionOptions, Mongoose } from "mongoose";
 import autoIncrement from 'mongoose-auto-increment';
 import config from '../config';
 
-const RETRY_TIMEOUT = 3000;
-const reconnectTries = 200;
 let reconnectNum = 0;
 
 export function connect(): Promise<Mongoose> {
-  
+
   mongoose.set('bufferCommands', false);
 
   const options: ConnectionOptions = {
     useNewUrlParser: true,
     bufferMaxEntries: 0,
-    autoReconnect: true,
-    reconnectInterval: RETRY_TIMEOUT,
-    reconnectTries,
   };
-  
+
+  mongoose.set('useFindAndModify', false);
+  mongoose.set('useCreateIndex', true);
+  mongoose.set('useUnifiedTopology', true);
+
   if (config.mongodb.user) {
     options.user = config.mongodb.user;
     options.pass = config.mongodb.pass;
     options.authSource = config.mongodb.authSource;
     options.poolSize = 15;
   }
-  
+
   const connection = mongoose.connect(`mongodb://${config.mongodb.dbName}:${config.mongodb.port}/${config.mongodb.db}`, options);
 
   connection.then((db) => {

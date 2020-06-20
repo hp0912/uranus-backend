@@ -55,26 +55,23 @@ export default class UserService {
     return user;
   }
 
+  async userList(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ users: UserEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const conditions = searchValue ? { $or: [{ username: { $regex: new RegExp(searchValue) } }, { nickname: { $regex: new RegExp(searchValue) } }] } as any : {};
+    const select = { password: 0, lastLoginTime: 0 };
+
+    const [users, total] = await Promise.all([
+      this.userModel.findAdvanced({ conditions, offset, limit, select }),
+      this.userModel.countDocuments(conditions),
+    ]);
+
+    return { users, total };
+  }
+
   async updateUserProfile(data: UserEntity, user: UserEntity): Promise<UserEntity> {
-    if (!data?.avatar) {
-      throw new Error('用户头像不能为空');
-    }
-
-    if (!data?.nickname) {
-      throw new Error('用户昵称不能为空');
-    }
-
-    if (data?.nickname.length > 15) {
-      throw new Error('用户昵称不能大于15个字符');
-    }
-
-    if (data?.signature && data.signature.length > 30) {
-      throw new Error('用户签名不能大于30个字符');
-    }
-
-    if (data?.personalProfile && data.personalProfile.length > 200) {
-      throw new Error('用户简介不能大于200个字符');
-    }
+    this.userValidation(data);
 
     const { avatar, nickname, signature, personalProfile } = data;
 
@@ -92,6 +89,22 @@ export default class UserService {
     delete (userResult as any).__v;
 
     return userResult;
+  }
+
+  async updateUserForAdmin(data: UserEntity): Promise<void> {
+    if (!data.id) {
+      throw new Error('缺少参数id');
+    }
+
+    this.userValidation(data);
+
+    const { id, ...updateData } = data;
+
+    const userResult = await this.userModel.findOneAndUpdate({ _id: id }, updateData);
+
+    if (!userResult) {
+      throw new Error('未查找到该用户相关信息');
+    }
   }
 
   async getSmsCode(ctx, phoneNumber: string): Promise<void> {
@@ -137,6 +150,7 @@ export default class UserService {
       username,
       nickname: username,
       password: passwordSha1,
+      registerTime: Date.now(),
     };
 
     await this.userModel.save(user);
@@ -194,6 +208,32 @@ export default class UserService {
       };
 
       await this.userModel.save(user);
+    }
+  }
+
+  private userValidation(user: UserEntity) {
+    if (user.avatar === '') {
+      throw new Error('用户头像不能为空');
+    }
+
+    if (user.avatar && !user.avatar.match(/\.(?:jpeg|jpg|png|webp)$/)) {
+      throw new Error('用户头像格式不合法');
+    }
+
+    if (user.nickname === '') {
+      throw new Error('用户昵称不能为空');
+    }
+
+    if (user.nickname && user.nickname.length > 7) {
+      throw new Error('用户昵称不能大于7个字符');
+    }
+
+    if (user.signature && user.signature.length > 30) {
+      throw new Error('用户签名不能大于30个字符');
+    }
+
+    if (user.personalProfile && user.personalProfile.length > 200) {
+      throw new Error('用户简介不能大于200个字符');
     }
   }
 
