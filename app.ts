@@ -7,6 +7,7 @@ import config from "./config";
 import { STSController } from './controllers/STSController';
 import { TagController } from './controllers/TagController';
 import { UserController } from './controllers/UserController';
+import { WebsiteSettingsController } from './controllers/WebsiteSettingsController';
 import ErrorMiddleware from './middleware/ErrorMiddleware';
 import AutnService from './services/AutnService';
 import { connect } from "./utils/mongodb";
@@ -55,6 +56,7 @@ export async function start() {
       STSController,
       TagController,
       UserController,
+      WebsiteSettingsController,
     ],
     middlewares: [ErrorMiddleware],
   });
