@@ -102,7 +102,11 @@ export default abstract class BaseModel<M = any> {
     }
 
     if (typeof offset === 'number') {
-      documentQuery = documentQuery.skip(offset).limit(limit);
+      documentQuery = documentQuery.skip(offset);
+    }
+
+    if (typeof limit === 'number') {
+      documentQuery = documentQuery.limit(limit);
     }
 
     if (sorter) {
