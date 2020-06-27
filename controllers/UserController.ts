@@ -48,7 +48,7 @@ export class UserController {
   @Post('/updateUserForAdmin')
   async updateUserForAdmin(
     @Body() data: IUser,
-  ): Promise<IHttpResult<UserEntity>> {
+  ): Promise<IHttpResult<null>> {
     await this.userService.updateUserForAdmin(data);
 
     return { code: 200, message: '', data: null };

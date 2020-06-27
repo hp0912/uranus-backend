@@ -1,6 +1,7 @@
-import { Authorized, Body, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
+import { Authorized, Body, BodyParam, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
-import { ArticleEntity } from "../common/schema/ArticleEntity";
+import { ArticleEntity, AuditStatus } from "../common/schema/ArticleEntity";
+import { UserEntity } from "../common/schema/UserEntity";
 import { IHttpResult, IUser } from "../common/types/commom";
 import ArticleService from "../services/ArticleService";
 
@@ -27,6 +28,41 @@ export class ArticleController {
     const articles = await this.articleService.articleList();
 
     return { code: 200, message: '', data: articles };
+  }
+
+  // 管理员专用
+  @Authorized([8])
+  @Get('/admin/list')
+  async articleListForAdmin(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+  ): Promise<IHttpResult<{ articles: ArticleEntity[], users: UserEntity[], total: number }>> {
+    const articlesResult = await this.articleService.articleListForAdmin({ current, pageSize, searchValue });
+
+    return { code: 200, message: '', data: articlesResult };
+  }
+
+  @Authorized([9])
+  @Post('/admin/audit')
+  async articleAudit(
+    @BodyParam('articleId') articleId: string,
+    @BodyParam('auditStatus') auditStatus: AuditStatus,
+  ): Promise<IHttpResult<null>> {
+    await this.articleService.articleAudit(articleId, auditStatus);
+
+    return { code: 200, message: '', data: null };
+  }
+
+  @Authorized([10])
+  @Delete('/admin/delete')
+  async articleDeleteForAdmin(
+    @BodyParam('articleId') articleId: string,
+  ): Promise<IHttpResult<null>> {
+    await this.articleService.articleDeleteForAdmin(articleId);
+
+    return { code: 200, message: '', data: null };
   }
 
   @Authorized()

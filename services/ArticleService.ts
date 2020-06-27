@@ -2,12 +2,15 @@ import { Inject, Service } from 'typedi';
 import { ArticleEntity, AuditStatus, ShareWith } from '../common/schema/ArticleEntity';
 import { UserEntity } from '../common/schema/UserEntity';
 import ArticleModel from '../models/ArticleModel';
+import UserModel from '../models/UserModel';
 import AutnService from './AutnService';
 
 @Service()
 export default class ArticleService {
   @Inject()
   private articleModel: ArticleModel;
+  @Inject()
+  private userModel: UserModel;
 
   @Inject()
   autnService: AutnService;
@@ -51,6 +54,36 @@ export default class ArticleService {
 
   async articleList(): Promise<ArticleEntity[]> {
     return await this.articleModel.find({});
+  }
+
+  async articleListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ articles: ArticleEntity[], users: UserEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const conditions = searchValue ? { $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : {};
+    const select = { content: 0 };
+
+    const [articles, total] = await Promise.all([
+      this.articleModel.findAdvanced({ conditions, offset, limit, select }),
+      this.articleModel.countDocuments(conditions),
+    ]);
+
+    const userIds = articles.map(item => item.createdBy);
+
+    if (userIds.length === 0) {
+      return { articles, users: [], total };
+    }
+
+    const users = await this.userModel.find({ _id: { $in: userIds } as any });
+    return { articles, users, total };
+  }
+
+  async articleAudit(articleId: string, auditStatus: AuditStatus): Promise<void> {
+    await this.articleModel.findOneAndUpdate({ _id: articleId }, { auditStatus });
+  }
+
+  async articleDeleteForAdmin(articleId: string): Promise<void> {
+    await this.articleModel.deleteOne({ _id: articleId });
   }
 
   async articleSave(data: ArticleEntity, user: UserEntity): Promise<ArticleEntity> {
