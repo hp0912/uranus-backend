@@ -32,6 +32,22 @@ export default class STSService {
   Policy = JSON.stringify(config.STSPolicy);
 
   async STSAuth(user: UserEntity): Promise<ISTSAuthResult> {
+    let Policy = '';
+
+    if (user.accessLevel >= 9) {
+      // 限制操作目录
+      const policy = JSON.parse(this.Policy);
+      const resource = policy.Statement[0].Resource[0];
+      policy.Statement[0].Resource[0] = `${resource}/*`;
+      Policy = JSON.stringify(policy);
+    } else {
+      // 限制操作目录
+      const policy = JSON.parse(this.Policy);
+      const resource = policy.Statement[0].Resource[0];
+      policy.Statement[0].Resource[0] = `${resource}/${user.id}/*`;
+      Policy = JSON.stringify(policy);
+    }
+
     const stsToken = await this.STSClient.request<{
       RequestId: string,
       AssumedRoleUser: { Arn: string, AssumedRoleId: string },
@@ -39,12 +55,12 @@ export default class STSService {
     }>('AssumeRole', {
       RoleArn: config.STSRoleArn,
       RoleSessionName: user.id,
-      Policy: this.Policy,
+      Policy,
     });
 
     return {
       ...stsToken.Credentials,
-      Policy: this.Policy,
+      Policy,
     };
   }
 

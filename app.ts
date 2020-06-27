@@ -4,6 +4,7 @@ import "reflect-metadata";
 import { Action, useContainer, useKoaServer as UseKoaServer } from "routing-controllers";
 import { Container } from 'typedi';
 import config from "./config";
+import { ArticleController } from './controllers/ArticleController';
 import { NotificationController } from './controllers/NotificationController';
 import { STSController } from './controllers/STSController';
 import { TagController } from './controllers/TagController';
@@ -54,6 +55,7 @@ export async function start() {
     defaultErrorHandler: false,
     routePrefix: '/api',
     controllers: [
+      ArticleController,
       NotificationController,
       STSController,
       TagController,
