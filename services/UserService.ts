@@ -48,6 +48,10 @@ export default class UserService {
 
     const user = await this.userModel.findOne({ _id, lastLoginTime });
 
+    if (!user) {
+      return null;
+    }
+
     delete user.password;
     delete user.lastLoginTime;
     delete (user as any).__v;

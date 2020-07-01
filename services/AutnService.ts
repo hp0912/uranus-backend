@@ -17,7 +17,7 @@ export default class AutnService {
     try {
       decoded = jwt.verify(session, config.passsalt);
     } catch {
-      throw new Error('登录信息已过期');
+      return null;
     }
 
     const { userId: _id, lastLoginTime } = decoded;

@@ -1,4 +1,4 @@
-import { arrayProp, index, prop } from '@typegoose/typegoose';
+import { index, prop } from '@typegoose/typegoose';
 
 export enum ShareWith {
   private = 'private',
@@ -24,7 +24,7 @@ export class ArticleEntity {
   @prop({ required: false, default: "https://img.houhoukang.com/uranus/system/default-cover.jpg" })
   coverPicture?: string;
 
-  @arrayProp({ items: String, required: false, default: [] })
+  @prop({ required: false, type: String })
   tags?: string[];
 
   @prop({ required: false })

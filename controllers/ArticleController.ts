@@ -1,6 +1,7 @@
 import { Authorized, Body, BodyParam, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { ArticleEntity, AuditStatus } from "../common/schema/ArticleEntity";
+import { TagEntity } from "../common/schema/TagEntity";
 import { UserEntity } from "../common/schema/UserEntity";
 import { IHttpResult, IUser } from "../common/types/commom";
 import ArticleService from "../services/ArticleService";
@@ -24,10 +25,13 @@ export class ArticleController {
   @Get('/list')
   async articleList(
     @Ctx() ctx,
-  ): Promise<IHttpResult<ArticleEntity[]>> {
-    const articles = await this.articleService.articleList();
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+  ): Promise<IHttpResult<{ articles: ArticleEntity[], users: UserEntity[], tags: TagEntity[], total: number }>> {
+    const articlesResult = await this.articleService.articleList(ctx, { current, pageSize, searchValue });
 
-    return { code: 200, message: '', data: articles };
+    return { code: 200, message: '', data: articlesResult };
   }
 
   // 管理员专用

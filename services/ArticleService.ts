@@ -1,7 +1,9 @@
 import { Inject, Service } from 'typedi';
 import { ArticleEntity, AuditStatus, ShareWith } from '../common/schema/ArticleEntity';
+import { TagEntity } from '../common/schema/TagEntity';
 import { UserEntity } from '../common/schema/UserEntity';
 import ArticleModel from '../models/ArticleModel';
+import TagModel from '../models/TagModel';
 import UserModel from '../models/UserModel';
 import AutnService from './AutnService';
 
@@ -9,6 +11,8 @@ import AutnService from './AutnService';
 export default class ArticleService {
   @Inject()
   private articleModel: ArticleModel;
+  @Inject()
+  private tagModel: TagModel;
   @Inject()
   private userModel: UserModel;
 
@@ -52,8 +56,59 @@ export default class ArticleService {
     }
   }
 
-  async articleList(): Promise<ArticleEntity[]> {
-    return await this.articleModel.find({});
+  async articleList(ctx, options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ articles: ArticleEntity[], users: UserEntity[], tags: TagEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const select = { content: 0 };
+    let conditions = searchValue ? { $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : {};
+
+    const currentUser = await this.autnService.checkLogin(ctx);
+
+    if (!currentUser) {
+      conditions.shareWith = ShareWith.public;
+    } else if (currentUser.accessLevel < 8) {
+      const subConditions = searchValue ? { $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : {};
+      conditions = {
+        $and: [
+          {
+            $or: [
+              { shareWith: ShareWith.public },
+              { shareWith: ShareWith.private, createdBy: currentUser.id },
+            ],
+          },
+          subConditions,
+        ],
+      };
+    }
+
+    const [articles, total] = await Promise.all([
+      this.articleModel.findAdvanced({ conditions, offset, limit, select }),
+      this.articleModel.countDocuments(conditions),
+    ]);
+
+    const tasks = [];
+    const userIds = articles.map(item => item.createdBy);
+    const tagIds: string[] = [];
+    articles.forEach(item => {
+      tagIds.push(...item.tags);
+    });
+
+    if (userIds.length) {
+      tasks.push(this.userModel.find({ _id: { $in: userIds } as any }));
+    } else {
+      tasks.push(Promise.resolve([]));
+    }
+
+    if (tagIds.length) {
+      tasks.push(this.tagModel.find({ _id: { $in: tagIds } as any }));
+    } else {
+      tasks.push(Promise.resolve([]));
+    }
+
+    const [users, tags] = await Promise.all(tasks);
+
+    return { articles, users, tags, total };
   }
 
   async articleListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ articles: ArticleEntity[], users: UserEntity[], total: number }> {
