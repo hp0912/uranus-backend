@@ -16,8 +16,9 @@ export class ArticleController {
   async articleGet(
     @Ctx() ctx,
     @QueryParam('articleId') articleId: string,
-  ): Promise<IHttpResult<ArticleEntity>> {
-    const article = await this.articleService.articleGet(ctx, articleId);
+    @QueryParam('token', { required: false }) token?: string,
+  ): Promise<IHttpResult<{ article: ArticleEntity, user: UserEntity }>> {
+    const article = await this.articleService.articleGet(ctx, articleId, token);
 
     return { code: 200, message: '', data: article };
   }

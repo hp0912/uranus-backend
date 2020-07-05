@@ -1,9 +1,13 @@
 import { Inject, Service } from 'typedi';
 import { ArticleEntity, AuditStatus, ShareWith } from '../common/schema/ArticleEntity';
+import { GoodsType, OrderCode } from '../common/schema/OrderEntity';
 import { TagEntity } from '../common/schema/TagEntity';
+import { TokenEntity, TokenType } from '../common/schema/TokenEntity';
 import { UserEntity } from '../common/schema/UserEntity';
 import ArticleModel from '../models/ArticleModel';
+import OrderModel from '../models/OrderModel';
 import TagModel from '../models/TagModel';
+import TokenModel from '../models/TokenModel';
 import UserModel from '../models/UserModel';
 import AutnService from './AutnService';
 
@@ -12,18 +16,23 @@ export default class ArticleService {
   @Inject()
   private articleModel: ArticleModel;
   @Inject()
+  private orderModel: OrderModel;
+  @Inject()
   private tagModel: TagModel;
+  @Inject()
+  private tokenModel: TokenModel;
   @Inject()
   private userModel: UserModel;
 
   @Inject()
   autnService: AutnService;
 
-  async articleGet(ctx, articleId: string): Promise<ArticleEntity> {
+  async articleGet(ctx, articleId: string, token?: string): Promise<{ article: ArticleEntity, user: UserEntity }> {
     if (!articleId) {
       throw new Error('参数不合法');
     }
 
+    const now = Date.now();
     const [article, user] = await Promise.all([
       this.articleModel.findOne({ _id: articleId }),
       this.autnService.checkLogin(ctx),
@@ -33,25 +42,44 @@ export default class ArticleService {
       throw new Error('该文章不存在');
     }
 
-    if (user && user.accessLevel >= 8) {
-      return article;
+    const author = await this.userModel.findOne({ _id: article.createdBy });
+    let tokenResult: TokenEntity = null;
+
+    if (token) {
+      tokenResult = await this.tokenModel.findOne({ _id: token, tokenType: TokenType.article, targetId: article.id });
     }
 
-    if (article.shareWith === ShareWith.private && (!user || user.id !== article.createdBy)) {
+    if (user && user.accessLevel >= 8) {
+      return { article, user: author };
+    }
+
+    if (article.shareWith === ShareWith.private && (!user || user.id !== article.createdBy) && !tokenResult) {
       throw new Error('应作者版权要求, 该文章仅作者自己可见');
     }
 
+    if (article.shareWith === ShareWith.private && (!user || user.id !== article.createdBy) && tokenResult.expires < now) {
+      throw new Error('该分享链接已过期');
+    }
+
     if (!article.charge) {
-      return article;
+      return { article, user: author };
     } else {
       if (!user) {
         throw new Error('应作者版权要求, 该文章需付费阅读, 请先登录');
       }
 
       if (user.id === article.createdBy) {
-        return article;
+        return { article, user: author };
       } else {
-        return article;
+        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
+
+        if (orderResult && orderResult.code === OrderCode.success) {
+          return { article, user: author };
+        } else {
+          // 付费文章，文章内容付费后才能浏览
+          delete article.content;
+          return { article, user: author };
+        }
       }
     }
   }
