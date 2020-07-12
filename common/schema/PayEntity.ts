@@ -14,9 +14,11 @@ export enum PayType {
 export enum PayMethod {
   scan = 'scan',
   wap = 'wap',
+  cashier = 'cashier',
 }
 
 @index({ goodsType: 1, goodsId: 1, userId: 1 }, { unique: true })
+@index({ orderId: 1 }, { unique: true })
 export class PayEntity {
   _id?: string;
 
