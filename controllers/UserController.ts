@@ -19,6 +19,19 @@ export class UserController {
     return { code: 200, message: '', data: user };
   }
 
+  @Authorized()
+  @Get('/search')
+  async userSearch(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+  ): Promise<IHttpResult<UserEntity[]>> {
+    const usersResult = await this.userService.userSearch({ current, pageSize, searchValue });
+
+    return { code: 200, message: '', data: usersResult };
+  }
+
   // 需要权限等级6以及以上的权限才能获取用户列表
   @Authorized([6])
   @Get('/admin/userList')

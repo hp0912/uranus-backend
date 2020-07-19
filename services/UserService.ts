@@ -59,6 +59,16 @@ export default class UserService {
     return user;
   }
 
+  async userSearch(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<UserEntity[]> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const conditions = searchValue ? { $or: [{ username: { $regex: new RegExp(searchValue) } }, { nickname: { $regex: new RegExp(searchValue) } }] } as any : {};
+    const select = { id: 1, username: 1, nickname: 1, avatar: 1 };
+
+    return await this.userModel.findAdvanced({ conditions, offset, limit, select });
+  }
+
   async userList(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ users: UserEntity[], total: number }> {
     const { current, pageSize, searchValue } = options;
     const limit = pageSize ? pageSize : 15;
