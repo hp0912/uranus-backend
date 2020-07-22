@@ -30,6 +30,12 @@ export class UserEntity {
   @prop({ required: false })
   personalProfile?: string;
 
+  @prop({ required: false, default: false }) // 是否被禁言
+  isBanned?: boolean;
+
+  @prop({ required: false, default: 0 }) // 禁言到期时间
+  expires?: number;
+
   @prop({ required: true, default: true })
   activated?: boolean;
 

@@ -5,6 +5,7 @@ import { Action, useContainer, useKoaServer as UseKoaServer } from "routing-cont
 import { Container } from 'typedi';
 import config from "./config";
 import { ArticleController } from './controllers/ArticleController';
+import { CommentController } from './controllers/CommentController';
 import { NotificationController } from './controllers/NotificationController';
 import { OrderController } from './controllers/OrderController';
 import { PayController } from './controllers/PayController';
@@ -58,6 +59,7 @@ export async function start() {
     routePrefix: '/api',
     controllers: [
       ArticleController,
+      CommentController,
       NotificationController,
       OrderController,
       PayController,

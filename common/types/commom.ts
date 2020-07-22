@@ -14,6 +14,8 @@ export interface IUser {
   accessLevel: number;
   signature?: string;
   personalProfile?: string;
+  isBanned?: boolean;
+  expires?: number;
   activated?: boolean;
   registerTime?: number;
 }
