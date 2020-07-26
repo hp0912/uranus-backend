@@ -1,3 +1,4 @@
+import { CommentEntity } from '../schema/CommentEntity';
 import { PayType } from '../schema/PayEntity';
 
 export interface IHttpResult<T> {
@@ -31,4 +32,8 @@ export interface IPayData {
   method: string;
   timestamp: string;
   version: string;
+}
+
+export interface ICommentEntity extends CommentEntity {
+  children?: CommentEntity[];
 }

@@ -2,12 +2,21 @@ import { Inject, Service } from "typedi";
 import { ArticleEntity } from "../common/schema/ArticleEntity";
 import { CommentEntity, CommentType, ICommentInput, IUranusNodeType } from '../common/schema/CommentEntity';
 import { NotificationEntity } from "../common/schema/NotificationEntity";
+import { GoodsType, OrderCode } from "../common/schema/OrderEntity";
 import { UserEntity } from '../common/schema/UserEntity';
-import { IUser } from "../common/types/commom";
+import { ICommentEntity, IUser } from "../common/types/commom";
 import ArticleModel from "../models/ArticleModel";
 import CommentModel from "../models/CommentModel";
 import NotificationModel from "../models/NotificationModel";
+import OrderModel from "../models/OrderModel";
 import UserModel from "../models/UserModel";
+
+export interface ICommentListParams {
+  commentType: CommentType;
+  targetId: string;
+  parentId: string;
+  lastCommentId?: string;
+}
 
 @Service()
 export default class CommentService {
@@ -17,6 +26,8 @@ export default class CommentService {
   private commentModel: CommentModel;
   @Inject()
   private notificationModel: NotificationModel;
+  @Inject()
+  private orderModel: OrderModel;
   @Inject()
   private userModel: UserModel;
 
@@ -148,6 +159,14 @@ export default class CommentService {
         throw new Error('您评论的文章不存在');
       }
 
+      if (article.charge && article.amount > 0) {
+        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
+
+        if (!orderResult || orderResult.code !== OrderCode.success) {
+          throw new Error('您还未购买，不能评论');
+        }
+      }
+
       articleUserId = article.createdBy;
 
       if (data.parentId !== '0') {
@@ -155,6 +174,10 @@ export default class CommentService {
 
         if (!commentRef) {
           throw new Error('您回复的评论不存在');
+        }
+
+        if (commentRef.parentId !== '0') {
+          throw new Error('非法的参数'); // 评论最多嵌套一层
         }
 
         commentUserId = commentRef.userId;
@@ -168,6 +191,7 @@ export default class CommentService {
         userId: user.id,
         userNicname: user.nickname,
         userAvatar: user.avatar,
+        userAccessLevel: user.accessLevel,
         content: comment,
         passed: true,
         addtime: now,
@@ -233,6 +257,55 @@ export default class CommentService {
       return commentResult;
     } else {
       throw new Error('不支持的类型');
+    }
+  }
+
+  async commentList(params: ICommentListParams): Promise<ICommentEntity[]> {
+    const { commentType, targetId, parentId, lastCommentId } = params;
+
+    if (!commentType || !targetId || !parentId) {
+      throw new Error('非法的参数');
+    }
+
+    const conditions = { commentType, targetId, parentId } as any;
+
+    if (lastCommentId) {
+      conditions._id = { $lt: lastCommentId };
+    }
+
+    const comments = await this.commentModel.findAdvanced({ conditions, limit: 10, sorter: { _id: -1 } }) as ICommentEntity[];
+
+    if (parentId === '0') {
+      const subComments = await Promise.all(comments.map(comment => {
+        const conditions2 = { commentType, targetId, parentId: comment.id } as any;
+        return this.commentModel.findAdvanced({ conditions: conditions2, limit: 10, sorter: { _id: -1 } });
+      }));
+
+      comments.forEach((comment, index) => {
+        comments[index].children = subComments[index];
+      });
+    }
+
+    return comments;
+  }
+
+  async commentDelete(params: { commentId: string }): Promise<void> {
+    const { commentId } = params;
+
+    if (!commentId) {
+      throw new Error('非法的参数');
+    }
+
+    const comment = await this.commentModel.findOne({ _id: commentId });
+
+    if (!comment) {
+      throw new Error('该评论不存在');
+    }
+
+    await this.commentModel.deleteOne({ _id: commentId });
+
+    if (comment.parentId === '0') {
+      await this.commentModel.deleteMany({ parentId: comment.id });
     }
   }
 }

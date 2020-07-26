@@ -89,6 +89,7 @@ export default class ArticleService {
     const limit = pageSize ? pageSize : 15;
     const offset = current ? (current - 1) * limit : 0;
     const select = { content: 0 };
+    const sorter = { _id: -1 };
     let conditions = searchValue ? { $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : {};
 
     const currentUser = await this.autnService.checkLogin(ctx);
@@ -111,7 +112,7 @@ export default class ArticleService {
     }
 
     const [articles, total] = await Promise.all([
-      this.articleModel.findAdvanced({ conditions, offset, limit, select }),
+      this.articleModel.findAdvanced({ conditions, offset, limit, select, sorter }),
       this.articleModel.countDocuments(conditions),
     ]);
 

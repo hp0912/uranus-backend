@@ -69,7 +69,7 @@ export default class STSService {
       throw new Error('文件名不合法');
     }
 
-    const suffix = filename.slice(filename.lastIndexOf('.'));
+    const suffix = filename.slice(filename.lastIndexOf('.') + 1);
 
     // 限制图片上传格式，系统管理员不受此限制
     if (user.accessLevel !== 10 && !['jpeg', 'jpg', 'png', 'webp'].includes(suffix)) {

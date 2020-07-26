@@ -4,7 +4,7 @@ export enum CommentType {
   article = 'article',
 }
 
-@index({ _id: 1, commentType: 1, targetId: 1, parentId: 1 }, { unique: false })
+@index({ commentType: 1, targetId: 1, parentId: 1 }, { unique: false })
 @index({ userId: 1 }, { unique: false })
 export class CommentEntity {
   _id?: string;
@@ -28,6 +28,9 @@ export class CommentEntity {
 
   @prop({ required: true })
   userAvatar?: string;
+
+  @prop({ required: true })
+  userAccessLevel?: number;
 
   @prop({ required: true }) // 评论内容
   content?: string;
