@@ -282,11 +282,52 @@ export default class CommentService {
       }));
 
       comments.forEach((comment, index) => {
+        subComments[index].forEach(subComm => {
+          if (!subComm.passed) {
+            subComm.content = '';
+          }
+        });
+
         comments[index].children = subComments[index];
+        if (!comment.passed) {
+          comments[index].content = '';
+        }
       });
     }
 
     return comments;
+  }
+
+  async commentListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ comments: CommentEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const conditions = searchValue ? { content: { $regex: new RegExp(searchValue) } } as any : {};
+
+    const [comments, total] = await Promise.all([
+      this.commentModel.findAdvanced({ conditions, offset, limit }),
+      this.commentModel.countDocuments(conditions),
+    ]);
+
+    return { comments, total };
+  }
+
+  async commentAudit(commentId: string, passed: boolean): Promise<void> {
+    await this.commentModel.findOneAndUpdate({ _id: commentId }, { passed });
+  }
+
+  async commentDeleteForAdmin(commentId: string): Promise<void> {
+    const comment = await this.commentModel.findOne({ _id: commentId });
+
+    if (!comment) {
+      throw new Error('该评论不存在');
+    }
+
+    await this.commentModel.deleteOne({ _id: commentId });
+
+    if (comment.parentId === '0') {
+      await this.commentModel.deleteMany({ parentId: comment.id });
+    }
   }
 
   async count(data: { commentType: CommentType, targetId: string }): Promise<number> {
@@ -294,7 +335,7 @@ export default class CommentService {
     return await this.commentModel.countDocuments({ commentType, targetId });
   }
 
-  async commentDelete(params: { commentId: string }): Promise<void> {
+  async commentDelete(params: { commentId: string }, user: IUser): Promise<void> {
     const { commentId } = params;
 
     if (!commentId) {
@@ -305,6 +346,10 @@ export default class CommentService {
 
     if (!comment) {
       throw new Error('该评论不存在');
+    }
+
+    if (comment.userId !== user.id) {
+      throw new Error('您只能删除自己的评论');
     }
 
     await this.commentModel.deleteOne({ _id: commentId });

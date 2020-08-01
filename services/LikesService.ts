@@ -27,16 +27,19 @@ export default class LikesService {
         if (!article) {
           throw new Error('点赞的文章不存在');
         }
-        this.notificationModel.save({
-          title: `${user.nickname}赞了你的文章`,
-          desc: `${user.nickname}赞了你的文章`,
-          content: `${user.nickname}赞了你的文章${article.title}`,
-          time: now,
-          userId: article.createdBy,
-          hasRead: false,
-        }).catch(reason => {
-          console.error(reason.message);
-        });
+
+        if (article.createdBy !== user.id) { // 点赞自己的文章不发送通知
+          this.notificationModel.save({
+            title: `${user.nickname}赞了你的文章`,
+            desc: `${user.nickname}赞了你的文章`,
+            content: `${user.nickname}赞了你的文章${article.title}`,
+            time: now,
+            userId: article.createdBy,
+            hasRead: false,
+          }).catch(reason => {
+            console.error(reason.message);
+          });
+        }
         break;
       default:
         throw new Error('不支持的类型');
