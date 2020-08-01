@@ -45,6 +45,9 @@ export class ArticleEntity {
   @prop({ required: false, enum: AuditStatus, default: AuditStatus.unapprove })
   auditStatus?: AuditStatus;
 
+  @prop({ required: false, default: 0 })
+  view?: number;
+
   @prop({ required: true })
   createdBy?: string;
 

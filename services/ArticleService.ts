@@ -50,6 +50,7 @@ export default class ArticleService {
     }
 
     if (user && user.accessLevel >= 8) {
+      await this.articleModel.findOneAndUpdate({ _id: article.id }, { $inc: { view: 1 } } as any);
       return { article, user: author };
     }
 
@@ -62,6 +63,7 @@ export default class ArticleService {
     }
 
     if (!article.charge) {
+      await this.articleModel.findOneAndUpdate({ _id: article.id }, { $inc: { view: 1 } } as any);
       return { article, user: author };
     } else {
       if (!user) {
@@ -74,6 +76,7 @@ export default class ArticleService {
         const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
 
         if (orderResult && orderResult.code === OrderCode.success) {
+          await this.articleModel.findOneAndUpdate({ _id: article.id }, { $inc: { view: 1 } } as any);
           return { article, user: author };
         } else {
           // 付费文章，文章内容付费后才能浏览
@@ -82,6 +85,15 @@ export default class ArticleService {
         }
       }
     }
+  }
+
+  async viewCount(articleId: string): Promise<number> {
+    const article = await this.articleModel.findOne({ _id: articleId });
+    if (article) {
+      return article.view;
+    }
+
+    return 0;
   }
 
   async articleList(ctx, options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ articles: ArticleEntity[], users: UserEntity[], tags: TagEntity[], total: number }> {

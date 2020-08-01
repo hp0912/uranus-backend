@@ -6,6 +6,7 @@ import { Container } from 'typedi';
 import config from "./config";
 import { ArticleController } from './controllers/ArticleController';
 import { CommentController } from './controllers/CommentController';
+import { LikesController } from './controllers/LikesController';
 import { NotificationController } from './controllers/NotificationController';
 import { OrderController } from './controllers/OrderController';
 import { PayController } from './controllers/PayController';
@@ -60,6 +61,7 @@ export async function start() {
     controllers: [
       ArticleController,
       CommentController,
+      LikesController,
       NotificationController,
       OrderController,
       PayController,

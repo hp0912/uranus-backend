@@ -162,7 +162,7 @@ export default class CommentService {
       if (article.charge && article.amount > 0) {
         const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
 
-        if (!orderResult || orderResult.code !== OrderCode.success) {
+        if (user.accessLevel < 8 && (!orderResult || orderResult.code !== OrderCode.success)) {
           throw new Error('您还未购买，不能评论');
         }
       }
@@ -287,6 +287,11 @@ export default class CommentService {
     }
 
     return comments;
+  }
+
+  async count(data: { commentType: CommentType, targetId: string }): Promise<number> {
+    const { commentType, targetId } = data;
+    return await this.commentModel.countDocuments({ commentType, targetId });
   }
 
   async commentDelete(params: { commentId: string }): Promise<void> {

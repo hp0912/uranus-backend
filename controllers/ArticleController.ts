@@ -1,16 +1,24 @@
 import { Authorized, Body, BodyParam, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { ArticleEntity, AuditStatus } from "../common/schema/ArticleEntity";
+import { CommentType } from "../common/schema/CommentEntity";
+import { LikesType } from "../common/schema/LikesEntity";
 import { TagEntity } from "../common/schema/TagEntity";
 import { UserEntity } from "../common/schema/UserEntity";
 import { IHttpResult, IUser } from "../common/types/commom";
 import ArticleService from "../services/ArticleService";
+import CommentService from "../services/CommentService";
+import LikesService from "../services/LikesService";
 
 @JsonController('/article')
 @Service()
 export class ArticleController {
   @Inject()
   private articleService: ArticleService;
+  @Inject()
+  private commentService: CommentService;
+  @Inject()
+  private likesService: LikesService;
 
   @Get('/get')
   async articleGet(
@@ -21,6 +29,21 @@ export class ArticleController {
     const article = await this.articleService.articleGet(ctx, articleId, token);
 
     return { code: 200, message: '', data: article };
+  }
+
+  @Get('/actionDataGet')
+  async articleActionDataGet(
+    @Ctx() ctx,
+    @QueryParam('articleId') articleId: string,
+  ): Promise<IHttpResult<{ viewCount: number, commentCount: number, likesCount: number, liked: boolean }>> {
+    const [viewCount, commentCount, likesCount, liked] = await Promise.all([
+      this.articleService.viewCount(articleId),
+      this.commentService.count({ commentType: CommentType.article, targetId: articleId }),
+      this.likesService.count({ likesType: LikesType.article, targetId: articleId }),
+      this.likesService.liked(ctx, LikesType.article, articleId),
+    ]);
+
+    return { code: 200, message: '', data: { viewCount, commentCount, likesCount, liked } };
   }
 
   @Get('/list')
