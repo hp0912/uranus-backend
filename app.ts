@@ -7,6 +7,7 @@ import config from "./config";
 import { ArticleController } from './controllers/ArticleController';
 import { CommentController } from './controllers/CommentController';
 import { LikesController } from './controllers/LikesController';
+import { MessageController } from './controllers/MessageController';
 import { NotificationController } from './controllers/NotificationController';
 import { OrderController } from './controllers/OrderController';
 import { PayController } from './controllers/PayController';
@@ -62,6 +63,7 @@ export async function start() {
       ArticleController,
       CommentController,
       LikesController,
+      MessageController,
       NotificationController,
       OrderController,
       PayController,

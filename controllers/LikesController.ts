@@ -23,7 +23,7 @@ export class LikesController {
   }
 
   @Get('/count')
-  async likesList(
+  async likesCount(
     @Ctx() ctx,
     @QueryParams() data: { likesType: LikesType, targetId: string },
   ): Promise<IHttpResult<number>> {
