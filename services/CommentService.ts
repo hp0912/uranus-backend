@@ -10,6 +10,7 @@ import CommentModel from "../models/CommentModel";
 import NotificationModel from "../models/NotificationModel";
 import OrderModel from "../models/OrderModel";
 import UserModel from "../models/UserModel";
+import WebsiteSettingsModel from "../models/WebsiteSettingsModel";
 
 export interface ICommentListParams {
   commentType: CommentType;
@@ -30,6 +31,8 @@ export default class CommentService {
   private orderModel: OrderModel;
   @Inject()
   private userModel: UserModel;
+  @Inject()
+  private websiteSettingsModel: WebsiteSettingsModel;
 
   htmlEncode(str: string): string {
     // 防范xss攻击
@@ -184,6 +187,8 @@ export default class CommentService {
       }
 
       const { comment, users } = await this.normalizeComment(data);
+      const settings = await this.websiteSettingsModel.findOne({});
+      const passed = settings && settings.commentReview ? false : true; // 评论审核是否开启
       const commentResult = await this.commentModel.save({
         commentType: CommentType.article,
         targetId: data.targetId,
@@ -193,66 +198,68 @@ export default class CommentService {
         userAvatar: user.avatar,
         userAccessLevel: user.accessLevel,
         content: comment,
-        passed: true,
+        passed,
         addtime: now,
       });
 
-      // 发送通知
-      const notifications: NotificationEntity[] = [];
-      let currentUser: UserEntity;
+      if (passed) {
+        // 发送通知
+        const notifications: NotificationEntity[] = [];
+        let currentUser: UserEntity;
 
-      if (commentUserId && commentUserId !== user.id) {
-        if (users[commentUserId]) {
-          currentUser = users[commentUserId];
-          delete users[commentUserId]; // 不重复通知
-        } else {
-          currentUser = await this.userModel.findOne({ _id: commentUserId });
-        }
+        if (commentUserId && commentUserId !== user.id) {
+          if (users[commentUserId]) {
+            currentUser = users[commentUserId];
+            delete users[commentUserId]; // 不重复通知
+          } else {
+            currentUser = await this.userModel.findOne({ _id: commentUserId });
+          }
 
-        notifications.push({
-          title: '您的评论有新回复',
-          desc: `${currentUser.nickname}回复了您的评论`,
-          content: `${currentUser.nickname}回复了你: ${comment}`,
-          time: now,
-          userId: commentUserId,
-          hasRead: false,
-        });
-      }
-
-      if (articleUserId && articleUserId !== commentUserId && articleUserId !== user.id) {
-        if (users[articleUserId]) {
-          currentUser = users[articleUserId];
-          delete users[articleUserId]; // 不重复通知
-        } else {
-          currentUser = await this.userModel.findOne({ _id: articleUserId });
-        }
-
-        notifications.push({
-          title: '您的文章有新回复',
-          desc: `${currentUser.nickname}评论了您的文章${article.title}`,
-          content: `${currentUser.nickname}: ${comment}`,
-          time: now,
-          userId: articleUserId,
-          hasRead: false,
-        });
-      }
-
-      Object.keys(users).forEach(u => {
-        if (users[u].id !== user.id) {
           notifications.push({
-            title: `${user.nickname}提到了你`,
-            desc: `${user.nickname}提到了你`,
-            content: `${user.nickname}在文章${article.title}下面提到了你: ${comment}`,
+            title: '您的评论有新回复',
+            desc: `${currentUser.nickname}回复了您的评论`,
+            content: `${currentUser.nickname}回复了你: ${comment}`,
             time: now,
-            userId: users[u].id,
+            userId: commentUserId,
             hasRead: false,
           });
         }
-      });
 
-      await Promise.all(notifications.map(noti => {
-        return this.notificationModel.save(noti).catch(reason => { console.error(reason.message); });
-      }));
+        if (articleUserId && articleUserId !== commentUserId && articleUserId !== user.id) {
+          if (users[articleUserId]) {
+            currentUser = users[articleUserId];
+            delete users[articleUserId]; // 不重复通知
+          } else {
+            currentUser = await this.userModel.findOne({ _id: articleUserId });
+          }
+
+          notifications.push({
+            title: '您的文章有新回复',
+            desc: `${currentUser.nickname}评论了您的文章${article.title}`,
+            content: `${currentUser.nickname}: ${comment}`,
+            time: now,
+            userId: articleUserId,
+            hasRead: false,
+          });
+        }
+
+        Object.keys(users).forEach(u => {
+          if (users[u].id !== user.id) {
+            notifications.push({
+              title: `${user.nickname}提到了你`,
+              desc: `${user.nickname}提到了你`,
+              content: `${user.nickname}在文章${article.title}下面提到了你: ${comment}`,
+              time: now,
+              userId: users[u].id,
+              hasRead: false,
+            });
+          }
+        });
+
+        await Promise.all(notifications.map(noti => {
+          return this.notificationModel.save(noti).catch(reason => { console.error(reason.message); });
+        }));
+      }
 
       return commentResult;
     } else {

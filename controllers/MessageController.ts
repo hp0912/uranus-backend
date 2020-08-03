@@ -46,14 +46,14 @@ export class MessageController {
     @QueryParam("current", { required: false }) current?: number,
     @QueryParam("pageSize", { required: false }) pageSize?: number,
     @QueryParam("searchValue", { required: false }) searchValue?: string,
-  ): Promise<IHttpResult<{ comments: MessageEntity[], total: number }>> {
+  ): Promise<IHttpResult<{ messages: MessageEntity[], total: number }>> {
     const messagesResult = await this.messageService.messageListForAdmin({ current, pageSize, searchValue });
 
     return { code: 200, message: '', data: messagesResult };
   }
 
   @Authorized([10])
-  @Delete('/delete')
+  @Delete('/admin/delete')
   async messageDelete(
     @Ctx() ctx,
     @Body() data: { messageId: string },

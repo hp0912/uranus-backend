@@ -63,18 +63,18 @@ export default class MessageService {
     return messages;
   }
 
-  async messageListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ comments: MessageEntity[], total: number }> {
+  async messageListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ messages: MessageEntity[], total: number }> {
     const { current, pageSize, searchValue } = options;
     const limit = pageSize ? pageSize : 15;
     const offset = current ? (current - 1) * limit : 0;
     const conditions = searchValue ? { content: { $regex: new RegExp(searchValue) } } as any : {};
 
-    const [comments, total] = await Promise.all([
+    const [messages, total] = await Promise.all([
       this.messageModel.findAdvanced({ conditions, offset, limit }),
       this.messageModel.countDocuments(conditions),
     ]);
 
-    return { comments, total };
+    return { messages, total };
   }
 
   async delete(data: { messageId: string }): Promise<void> {
