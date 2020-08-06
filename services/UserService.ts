@@ -52,11 +52,7 @@ export default class UserService {
       return null;
     }
 
-    delete user.password;
-    delete user.lastLoginTime;
-    delete (user as any).__v;
-
-    return user;
+    return this.desensitize(user);
   }
 
   async userSearch(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<UserEntity[]> {
@@ -98,11 +94,7 @@ export default class UserService {
       throw new Error('登录信息已过期');
     }
 
-    delete userResult.password;
-    delete userResult.lastLoginTime;
-    delete (userResult as any).__v;
-
-    return userResult;
+    return this.desensitize(userResult);
   }
 
   async updateUserForAdmin(data: UserEntity): Promise<void> {
@@ -172,6 +164,15 @@ export default class UserService {
 
   async signIn(ctx, data: ISignInParams): Promise<UserEntity> {
     const { username, password } = data;
+
+    if (!username || !username.match(/^[1][3578]\d{9}$/)) {
+      throw new Error('请输入正确的手机号');
+    }
+
+    if (!password || !password.match(/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/)) {
+      throw new Error('密码至少为6位，并且要同时包含大、小写字母和数字');
+    }
+
     const passwordSha1 = sha1(password + sha1(config.passsalt));
 
     const user = await this.userModel.findOne({ username, password: passwordSha1 });
@@ -191,11 +192,7 @@ export default class UserService {
     const session = jwt.sign({ userId: user.id, lastLoginTime }, config.passsalt, { expiresIn: '7 days' });
     this.setToken(ctx, session);
 
-    delete user.password;
-    delete user.lastLoginTime;
-    delete (user as any).__v;
-
-    return user;
+    return this.desensitize(user);
   }
 
   async signOut(ctx): Promise<void> {
@@ -251,6 +248,14 @@ export default class UserService {
     }
   }
 
+  private desensitize(user: UserEntity): UserEntity {
+    delete user.password;
+    delete user.lastLoginTime;
+    delete (user as any).__v;
+
+    return user;
+  }
+
   private verify(ctx, data: ISignUpParams) {
     const { username, password, smsCode } = data;
 
@@ -281,7 +286,7 @@ export default class UserService {
     }
   }
 
-  private setToken(ctx, token: string) {
+  setToken(ctx, token: string) {
     const expires = new Date();
     expires.setTime(expires.getTime() + 7 * 86400 * 1000);
 

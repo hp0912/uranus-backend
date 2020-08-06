@@ -1,6 +1,8 @@
 import { index, prop } from '@typegoose/typegoose';
 
 @index({ username: 1 }, { unique: true })
+@index({ githubId: 1 }, { unique: true })
+@index({ username: 1, githubId: 1 }, { unique: true })
 export class UserEntity {
   _id?: string;
 
@@ -41,4 +43,10 @@ export class UserEntity {
 
   @prop({ required: true })
   registerTime?: number;
+
+  @prop({ required: false })
+  githubId?: number;
+
+  @prop({ required: false })
+  githubNodeId?: string;
 }

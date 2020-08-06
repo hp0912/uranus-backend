@@ -37,3 +37,7 @@ export interface IPayData {
 export interface ICommentEntity extends CommentEntity {
   children?: CommentEntity[];
 }
+
+export enum ThirdParty {
+  github = 'github',
+}

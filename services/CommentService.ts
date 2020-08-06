@@ -205,20 +205,16 @@ export default class CommentService {
       if (passed) {
         // 发送通知
         const notifications: NotificationEntity[] = [];
-        let currentUser: UserEntity;
 
         if (commentUserId && commentUserId !== user.id) {
           if (users[commentUserId]) {
-            currentUser = users[commentUserId];
             delete users[commentUserId]; // 不重复通知
-          } else {
-            currentUser = await this.userModel.findOne({ _id: commentUserId });
           }
 
           notifications.push({
             title: '您的评论有新回复',
-            desc: `${currentUser.nickname}回复了您的评论`,
-            content: `${currentUser.nickname}回复了你: ${comment}`,
+            desc: `${user.nickname}回复了您的评论`,
+            content: `${user.nickname}回复了你: ${comment}`,
             time: now,
             userId: commentUserId,
             hasRead: false,
@@ -227,16 +223,13 @@ export default class CommentService {
 
         if (articleUserId && articleUserId !== commentUserId && articleUserId !== user.id) {
           if (users[articleUserId]) {
-            currentUser = users[articleUserId];
             delete users[articleUserId]; // 不重复通知
-          } else {
-            currentUser = await this.userModel.findOne({ _id: articleUserId });
           }
 
           notifications.push({
             title: '您的文章有新回复',
-            desc: `${currentUser.nickname}评论了您的文章${article.title}`,
-            content: `${currentUser.nickname}: ${comment}`,
+            desc: `${user.nickname}评论了您的文章${article.title}`,
+            content: `${user.nickname}: ${comment}`,
             time: now,
             userId: articleUserId,
             hasRead: false,

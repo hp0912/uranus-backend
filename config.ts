@@ -27,6 +27,8 @@ const config = {
   trPayappSceret: '', // 图灵支付
   notifyUrl: '', // 支付异步通知地址
   synNotifyUrl: '', // 客户端同步跳转
+  githubClientID: '',
+  githubClientSecret: '',
 };
 
 export const initConfig = async () => {

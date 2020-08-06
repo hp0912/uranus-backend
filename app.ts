@@ -9,6 +9,7 @@ import { CommentController } from './controllers/CommentController';
 import { LikesController } from './controllers/LikesController';
 import { MessageController } from './controllers/MessageController';
 import { NotificationController } from './controllers/NotificationController';
+import { OAuthController } from './controllers/OAuthController';
 import { OrderController } from './controllers/OrderController';
 import { PayController } from './controllers/PayController';
 import { STSController } from './controllers/STSController';
@@ -65,6 +66,7 @@ export async function start() {
       LikesController,
       MessageController,
       NotificationController,
+      OAuthController,
       OrderController,
       PayController,
       STSController,
