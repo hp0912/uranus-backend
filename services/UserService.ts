@@ -23,8 +23,8 @@ export default class UserService {
   private userModel: UserModel;
 
   smsClient = new alicloudSms({
-    accessKeyId: config.accessKeyId,
-    accessKeySecret: config.accessKeySecret,
+    accessKeyId: config.STSAccessKeyId,
+    accessKeySecret: config.STSAccessKeySecret,
     endpoint: 'https://dysmsapi.aliyuncs.com',
     apiVersion: '2017-05-25',
   });
