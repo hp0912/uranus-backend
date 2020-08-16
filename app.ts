@@ -12,6 +12,7 @@ import { NotificationController } from './controllers/NotificationController';
 import { OAuthController } from './controllers/OAuthController';
 import { OrderController } from './controllers/OrderController';
 import { PayController } from './controllers/PayController';
+import { ProbeController } from './controllers/ProbeController';
 import { STSController } from './controllers/STSController';
 import { TagController } from './controllers/TagController';
 import { UserController } from './controllers/UserController';
@@ -69,6 +70,7 @@ export async function start() {
       OAuthController,
       OrderController,
       PayController,
+      ProbeController,
       STSController,
       TagController,
       UserController,

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uranus-backend
+spec:
+  selector:
+    matchLabels:
+      app: uranus-backend
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: uranus-backend
+    spec:
+      containers:
+      - name: uranus-backend
+        image: registry.cn-shenzhen.aliyuncs.com/houhou/uranus-backend:{TAG}
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: CONFIG_ENV
+            value: prod
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/debug/vars
+            port: 9000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/debug/vars
+            port: 9000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 5

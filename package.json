@@ -6,7 +6,10 @@
   "author": "809211365@qq.com",
   "license": "MIT",
   "scripts": {
-    "dev": "cross-env config_url=http://127.0.0.1:9001 node -r ts-node/register -r tsconfig-paths/register ./index.ts"
+    "example": "cross-env node -r ts-node/register -r tsconfig-paths/register ./index.ts",
+    "dev": "cross-env CONFIG_ENV=dev node -r ts-node/register -r tsconfig-paths/register ./index.ts",
+    "build": "tsc",
+    "start-server": "CONFIG_ENV=prod node --experimental-worker ./build/index.js"
   },
   "config": {
     "ghooks": {
