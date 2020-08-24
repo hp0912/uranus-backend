@@ -4,6 +4,7 @@ import { GoodsType, OrderCode } from '../common/schema/OrderEntity';
 import { TagEntity } from '../common/schema/TagEntity';
 import { TokenEntity, TokenType } from '../common/schema/TokenEntity';
 import { UserEntity } from '../common/schema/UserEntity';
+import { IUser } from '../common/types/commom';
 import ArticleModel from '../models/ArticleModel';
 import OrderModel from '../models/OrderModel';
 import TagModel from '../models/TagModel';
@@ -152,6 +153,22 @@ export default class ArticleService {
     return { articles, users, tags, total };
   }
 
+  async myArticles(ctx, options: { current?: number, pageSize?: number, searchValue?: string }, user: IUser): Promise<{ articles: ArticleEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const select = { content: 0 };
+    const sorter = { _id: -1 };
+    const conditions = searchValue ? { createdBy: user.id, $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : { createdBy: user.id };
+
+    const [articles, total] = await Promise.all([
+      this.articleModel.findAdvanced({ conditions, offset, limit, select, sorter }),
+      this.articleModel.countDocuments(conditions),
+    ]);
+
+    return { articles, total };
+  }
+
   async articleListForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }): Promise<{ articles: ArticleEntity[], users: UserEntity[], total: number }> {
     const { current, pageSize, searchValue } = options;
     const limit = pageSize ? pageSize : 15;
@@ -241,8 +258,17 @@ export default class ArticleService {
     return saveResult;
   }
 
-  async articleDelete(id: string): Promise<ArticleEntity[]> {
+  async articleDelete(id: string, user: IUser): Promise<void> {
+    const article = await this.articleModel.findOne({ _id: id });
+
+    if (!article) {
+      throw new Error('该博客不存在');
+    }
+
+    if (article.createdBy !== user.id) {
+      throw new Error('非法的参数');
+    }
+
     await this.articleModel.deleteOne({ _id: id });
-    return await this.articleModel.find({});
   }
 }

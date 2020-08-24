@@ -59,6 +59,20 @@ export class ArticleController {
     return { code: 200, message: '', data: articlesResult };
   }
 
+  @Authorized()
+  @Get('/myArticles')
+  async myArticles(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<{ articles: ArticleEntity[], total: number }>> {
+    const articlesResult = await this.articleService.myArticles(ctx, { current, pageSize, searchValue }, user);
+
+    return { code: 200, message: '', data: articlesResult };
+  }
+
   // 管理员专用
   @Authorized([8])
   @Get('/admin/list')
@@ -111,10 +125,11 @@ export class ArticleController {
   async articleDelete(
     @Ctx() ctx,
     @Body() data: { id: string },
-  ): Promise<IHttpResult<ArticleEntity[]>> {
-    const articles = await this.articleService.articleDelete(data.id);
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<null>> {
+    await this.articleService.articleDelete(data.id, user);
 
-    return { code: 200, message: '', data: articles };
+    return { code: 200, message: '', data: null };
   }
 
 }
