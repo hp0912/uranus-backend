@@ -9,11 +9,21 @@ export default class WebsiteSettingsService {
 
   async motto(): Promise<string> {
     const result = await this.websiteSettingsModel.findOne({});
+
+    if (!result) {
+      return '';
+    }
+
     return result.motto;
   }
 
   async advertisement(): Promise<string> {
     const result = await this.websiteSettingsModel.findOne({});
+
+    if (!result) {
+      return '';
+    }
+
     return result.advertisement;
   }
 

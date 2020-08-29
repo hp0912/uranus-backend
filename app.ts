@@ -15,6 +15,7 @@ import { PayController } from './controllers/PayController';
 import { ProbeController } from './controllers/ProbeController';
 import { STSController } from './controllers/STSController';
 import { TagController } from './controllers/TagController';
+import { TokenController } from './controllers/TokenController';
 import { UserController } from './controllers/UserController';
 import { WebsiteSettingsController } from './controllers/WebsiteSettingsController';
 import ErrorMiddleware from './middleware/ErrorMiddleware';
@@ -73,6 +74,7 @@ export async function start() {
       ProbeController,
       STSController,
       TagController,
+      TokenController,
       UserController,
       WebsiteSettingsController,
     ],

@@ -1,5 +1,10 @@
 import { index, prop } from '@typegoose/typegoose';
 
+export enum ArticleCategory {
+  frontend = 'frontend',
+  gossip = 'gossip',
+}
+
 export enum ShareWith {
   private = 'private',
   public = 'public',
@@ -20,6 +25,9 @@ export class ArticleEntity {
 
   @prop({ required: true })
   title?: string;
+
+  @prop({ required: false, enum: ArticleCategory, default: ArticleCategory.gossip })
+  category?: ArticleCategory;
 
   @prop({ required: false, default: "https://img.houhoukang.com/uranus/system/default-cover.jpg" })
   coverPicture?: string;

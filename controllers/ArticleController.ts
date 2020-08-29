@@ -1,6 +1,6 @@
 import { Authorized, Body, BodyParam, Ctx, CurrentUser, Delete, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
-import { ArticleEntity, AuditStatus } from "../common/schema/ArticleEntity";
+import { ArticleCategory, ArticleEntity, AuditStatus } from "../common/schema/ArticleEntity";
 import { CommentType } from "../common/schema/CommentEntity";
 import { LikesType } from "../common/schema/LikesEntity";
 import { TagEntity } from "../common/schema/TagEntity";
@@ -49,11 +49,26 @@ export class ArticleController {
   @Get('/list')
   async articleList(
     @Ctx() ctx,
+    @QueryParam("category") category?: ArticleCategory,
     @QueryParam("current", { required: false }) current?: number,
     @QueryParam("pageSize", { required: false }) pageSize?: number,
     @QueryParam("searchValue", { required: false }) searchValue?: string,
   ): Promise<IHttpResult<{ articles: ArticleEntity[], users: UserEntity[], tags: TagEntity[], total: number }>> {
-    const articlesResult = await this.articleService.articleList(ctx, { current, pageSize, searchValue });
+    const articlesResult = await this.articleService.articleList(ctx, { category, current, pageSize, searchValue });
+
+    return { code: 200, message: '', data: articlesResult };
+  }
+
+  @Authorized()
+  @Get('/myArticles')
+  async myArticles(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<{ articles: ArticleEntity[], total: number }>> {
+    const articlesResult = await this.articleService.myArticles(ctx, { current, pageSize, searchValue }, user);
 
     return { code: 200, message: '', data: articlesResult };
   }
@@ -110,10 +125,11 @@ export class ArticleController {
   async articleDelete(
     @Ctx() ctx,
     @Body() data: { id: string },
-  ): Promise<IHttpResult<ArticleEntity[]>> {
-    const articles = await this.articleService.articleDelete(data.id);
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<null>> {
+    await this.articleService.articleDelete(data.id, user);
 
-    return { code: 200, message: '', data: articles };
+    return { code: 200, message: '', data: null };
   }
 
 }
