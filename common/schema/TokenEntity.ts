@@ -4,7 +4,7 @@ export enum TokenType {
   article = 'article',
 }
 
-@index({ _id: 1, tokenType: 1, targetId: 1 }, { unique: false })
+@index({ tokenType: 1, targetId: 1 }, { unique: true })
 export class TokenEntity {
   _id?: string;
 
