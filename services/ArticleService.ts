@@ -112,6 +112,7 @@ export default class ArticleService {
     } else if (currentUser.accessLevel < 8) {
       const subConditions = searchValue ? { $or: [{ title: { $regex: new RegExp(searchValue) } }, { desc: { $regex: new RegExp(searchValue) } }] } as any : {};
       conditions = {
+        category,
         $and: [
           {
             $or: [
