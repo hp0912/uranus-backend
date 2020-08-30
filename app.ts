@@ -25,15 +25,17 @@ import { connect } from "./utils/mongodb";
 export async function start() {
   const app = new Koa();
 
-  app.use(cors({
-    origin: (ctx) => {
-      return 'http://localhost:3000';
-    },
-    maxAge: 3600,
-    credentials: true,
-    allowMethods: ['GET', 'POST', 'DELETE'],
-    allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-  }));
+  if (process.env.CONFIG_ENV !== 'prod') {
+    app.use(cors({
+      origin: (ctx) => {
+        return 'http://localhost:3000';
+      },
+      maxAge: 3600,
+      credentials: true,
+      allowMethods: ['GET', 'POST', 'DELETE'],
+      allowHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    }));
+  }
 
   await connect();
 

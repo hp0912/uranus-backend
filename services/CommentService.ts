@@ -42,7 +42,7 @@ export default class CommentService {
   async normalizeComment(data: ICommentInput): Promise<{ comment: string, users: { [userId: string]: UserEntity } }> {
     const commentStrs: string[] = [];
     const users: { [userId: string]: UserEntity } = {};
-    const regexDomain = /^http:\/\/storage\.jd\.com/;
+    const regexDomain = /^https:\/\/storage\.jd\.com/;
     const regexImg = /s(\d{2})\.png$/;
 
     const { rows } = data.content;
