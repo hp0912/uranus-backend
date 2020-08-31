@@ -18,6 +18,7 @@ import { TagController } from './controllers/TagController';
 import { TokenController } from './controllers/TokenController';
 import { UserController } from './controllers/UserController';
 import { WebsiteSettingsController } from './controllers/WebsiteSettingsController';
+import { WeChatController } from './controllers/WeChatController';
 import ErrorMiddleware from './middleware/ErrorMiddleware';
 import AutnService from './services/AutnService';
 import { connect } from "./utils/mongodb";
@@ -79,6 +80,7 @@ export async function start() {
       TokenController,
       UserController,
       WebsiteSettingsController,
+      WeChatController,
     ],
     middlewares: [ErrorMiddleware],
   });
