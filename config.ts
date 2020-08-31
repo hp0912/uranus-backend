@@ -20,6 +20,7 @@ const config = {
   STSAccessKeySecret: 'xxx', // 阿里云 sts临时授权
   STSRoleArn: 'xxx', // 阿里云 sts临时授权
   STSPolicy: {}, // 阿里云 sts临时授权
+  weChatToken: '',
   tencentkey: '', // 腾讯位置secreKey
   dxAppID: '', // 顶象登录验证
   dxAppSecret: '', // 顶象登录验证
