@@ -7,8 +7,8 @@ export enum PayCode {
 }
 
 export enum PayType {
-  AliPay = '1',
-  WeChatPay = '2',
+  AliPay = 'alipay',
+  WeChatPay = 'wechat',
 }
 
 export enum PayMethod {
@@ -17,7 +17,6 @@ export enum PayMethod {
   cashier = 'cashier',
 }
 
-@index({ goodsType: 1, goodsId: 1, userId: 1 }, { unique: true })
 @index({ orderId: 1 }, { unique: true })
 export class PayEntity {
   _id?: string;
@@ -44,6 +43,12 @@ export class PayEntity {
 
   @prop({ required: true, enum: PayMethod }) // 支付方式: 扫码或者调起APP
   method?: PayMethod;
+
+  @prop({ required: false })
+  third_party_order_id?: string;
+
+  @prop({ required: false })
+  transaction_id?: string;
 
   @prop({ required: true })
   createTime?: number;

@@ -10,7 +10,7 @@ export enum OrderCode {
   failure = 500,
 }
 
-@index({ goodsType: 1, goodsId: 1, userId: 1 }, { unique: true })
+@index({ goodsType: 1, goodsId: 1, buyerId: 1 }, { unique: false })
 export class OrderEntity {
   _id?: string;
 
@@ -26,7 +26,10 @@ export class OrderEntity {
   totalPrice?: number;
 
   @prop({ required: true })
-  userId?: string;
+  sellerId?: string;
+
+  @prop({ required: true })
+  buyerId?: string;
 
   @prop({ required: false }) // 备注
   remark?: string;

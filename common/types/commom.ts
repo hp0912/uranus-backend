@@ -22,16 +22,57 @@ export interface IUser {
 }
 
 export interface IPayData {
-  amount: string; // 免单,最低支付1分
-  tradeName: string; // 商户自定义订单标题
-  outTradeNo: string; // 商户自主生成的订单号
-  payType: PayType; // 支付渠道
-  payuserid: string; // 商家支付id
-  notifyUrl: string; // 服务器异步通知
-  appkey: string;
-  method: string;
-  timestamp: string;
-  version: string;
+  mchid: string; // 平台分配商户号
+  out_trade_no: string; // 用户端自主生成的订单号
+  total_fee: number; // 单位：分
+  body: string; // 商品描述
+  notify_url: string; // 通知回调地址
+  type: PayType;
+  goods_detail?: string; // 商品详情
+  attach?: string; // 附加的其他参数
+  nonce_str: string; // 随机字符串 增加安全性
+  sign: string; // 签名
+}
+
+export enum PayReturnCode {
+  success = 'success',
+  fail = 'fail',
+}
+
+export interface IPayResponse {
+  return_code: PayReturnCode;
+  return_msg?: string;
+  err_code?: string;
+  err_msg?: string;
+  nonce_str: string;
+  sign: string;
+  goods_detail?: string;
+  mchid: string;
+  order_id: string;
+  out_trade_no: string;
+  total_fee: string;
+  code_url: string;
+}
+
+export interface IScanPayResponse extends IPayResponse {
+  code_url: string;
+}
+
+export interface IPayNotifyRequest {
+  return_code: string;
+  return_msg?: string;
+  err_code?: string;
+  err_msg?: string;
+  nonce_str: string;
+  sign: string;
+  mchid: string;
+  order_id: string; // 平台返回订单号
+  transaction_id: string; // 微信支付宝等第三方平台交易号
+  out_trade_no: string; // 用户端自主生成的订单号
+  total_fee: number;
+  status: 'complete';
+  time_end: string;
+  attach?: string;
 }
 
 export interface ICommentEntity extends CommentEntity {

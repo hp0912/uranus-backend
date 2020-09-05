@@ -16,14 +16,12 @@ export default class OrderService {
     const { id: userId } = user;
     const now = Date.now();
     let price = 0;
+    let sellerId = '';
     let remark = '';
 
     switch (goodsType) {
       case GoodsType.article:
-        const [article, articleOrder] = await Promise.all([
-          this.articleModel.findOne({ _id: goodsId }),
-          this.orderModel.findOne({ goodsType, goodsId, userId }),
-        ]);
+        const article = await this.articleModel.findOne({ _id: goodsId });
 
         if (!article) {
           throw new Error('不存在的文章');
@@ -33,24 +31,26 @@ export default class OrderService {
           throw new Error('该文章可以免费阅读');
         }
 
-        if (articleOrder && articleOrder.code === OrderCode.success) {
-          throw new Error('该文章您已经支付过了');
-        }
-
+        sellerId = article.createdBy;
         price = article.amount * 100; // 单位：分
-        remark = `知识付费: ${article.title}`;
+        remark = `吼吼: ${article.title}`;
         break;
       default:
         throw new Error('无效的商品类别');
     }
 
-    await this.orderModel.deleteMany({ goodsType, goodsId, userId });
+    const orderSucceed = await this.orderModel.findOne({ goodsType, goodsId, buyerId: userId, code: OrderCode.success });
+
+    if (orderSucceed) {
+      throw new Error('该文章您已经支付过了');
+    }
 
     const order: OrderEntity = {
       goodsType,
       goodsId,
       totalPrice: price,
-      userId,
+      sellerId,
+      buyerId: userId,
       remark,
       code: OrderCode.init,
       status: '未支付',

@@ -163,7 +163,7 @@ export default class CommentService {
       }
 
       if (article.charge && article.amount > 0) {
-        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
+        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, buyerId: user.id });
 
         if (article.createdBy !== user.id && user.accessLevel < 8 && (!orderResult || orderResult.code !== OrderCode.success)) {
           throw new Error('您还未购买，不能评论');

@@ -30,7 +30,8 @@
         "tsconfig-paths/register"
       ],
       "env": {
-        "config_url": "http://127.0.0.1:9001"
+        "config_url": "http://127.0.0.1:9001",
+        "CONFIG_ENV": "dev"
       },
       "cwd": "${workspaceRoot}",
       "protocol": "inspector",

@@ -85,8 +85,6 @@ export async function start() {
     middlewares: [ErrorMiddleware],
   });
 
-  console.log('启动配置文件: ', config);
-
   app.listen(config.serverPort);
 
   console.log(`URANUS 以${config.serverPort}端口启动服务成功了~~~`);
