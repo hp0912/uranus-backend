@@ -74,7 +74,7 @@ export default class ArticleService {
       if (user.id === article.createdBy) {
         return { article, user: author };
       } else {
-        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, userId: user.id });
+        const orderResult = await this.orderModel.findOne({ goodsType: GoodsType.article, goodsId: article.id, buyerId: user.id, code: OrderCode.success });
 
         if (orderResult && orderResult.code === OrderCode.success) {
           await this.articleModel.findOneAndUpdate({ _id: article.id }, { $inc: { view: 1 } } as any);

@@ -24,12 +24,12 @@ const config = {
   tencentkey: '', // 腾讯位置secreKey
   dxAppID: '', // 顶象登录验证
   dxAppSecret: '', // 顶象登录验证
-  trPayappkey: '', // 图灵支付
-  trPayappSceret: '', // 图灵支付
-  notifyUrl: '', // 支付异步通知地址
   synNotifyUrl: '', // 客户端同步跳转
   githubClientID: '',
   githubClientSecret: '',
+  merchantID: '',
+  merchantSecret: '',
+  notifyUrl: '',
 };
 
 export const initConfig = async () => {
