@@ -1,7 +1,14 @@
 import { Authorized, Body, Ctx, CurrentUser, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { PayCode, PayMethod, PayType } from "../common/schema/PayEntity";
-import { IHttpResult, IPayNotifyRequest, IScanPayResponse, IUser, IWAPPayResponse } from "../common/types/commom";
+import {
+  ICashierPayData,
+  IHttpResult,
+  IPayNotifyRequest,
+  IScanPayResponse,
+  IUser,
+  IWAPPayResponse,
+} from "../common/types/commom";
 import PayService from "../services/PayService";
 
 @JsonController('/pay')
@@ -16,10 +23,21 @@ export class PayController {
     @Ctx() ctx,
     @Body() data: { orderId: string, payType: PayType, payMethod: PayMethod },
     @CurrentUser() user?: IUser,
-  ): Promise<IHttpResult<IScanPayResponse | IWAPPayResponse>> {
-    const payData = await this.payService.initPay(data, user);
+  ): Promise<IHttpResult<IScanPayResponse | IWAPPayResponse | ICashierPayData>> {
+    const { orderId, payMethod, payType } = data;
 
-    return { code: 200, message: '', data: payData };
+    if (payMethod === PayMethod.scan) {
+      const payData = await this.payService.initScanPay({ orderId, payType });
+      return { code: 200, message: '', data: payData };
+    } else if (payMethod === PayMethod.wap) {
+      const payData = await this.payService.initWAPPay({ orderId, payType });
+      return { code: 200, message: '', data: payData };
+    } else if (payMethod === PayMethod.cashier) {
+      const payData = await this.payService.initCashierPay({ orderId, payType });
+      return { code: 200, message: '', data: payData };
+    } else {
+      throw new Error('非法的参数');
+    }
   }
 
   @Authorized()

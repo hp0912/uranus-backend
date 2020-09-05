@@ -40,6 +40,10 @@ export interface IWAPPayData extends IPayData {
   wap_name: string;
 }
 
+export interface ICashierPayData extends IPayData {
+  redirect_url: string;
+}
+
 export enum PayReturnCode {
   success = 'success',
   fail = 'fail',

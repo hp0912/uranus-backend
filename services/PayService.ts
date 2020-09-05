@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { Inject, Service } from 'typedi';
 import { GoodsType, OrderCode, OrderEntity } from '../common/schema/OrderEntity';
 import { PayCode, PayMethod, PayType } from '../common/schema/PayEntity';
-import { IPayData, IPayNotifyRequest, IPayResponse, IScanPayResponse, IUser, IWAPPayData, IWAPPayResponse, PayReturnCode } from '../common/types/commom';
+import { ICashierPayData, IPayData, IPayNotifyRequest, IPayResponse, IScanPayResponse, IWAPPayData, IWAPPayResponse, PayReturnCode } from '../common/types/commom';
 import config from '../config';
 import OrderModel from '../models/OrderModel';
 import PayModel from '../models/PayModel';
@@ -20,76 +20,67 @@ export default class PayService {
   @Inject()
   private payModel: PayModel;
 
-  async initPay(data: { orderId: string, payType: PayType, payMethod: PayMethod }, user: IUser): Promise<IScanPayResponse | IWAPPayResponse> {
-    const { orderId, payType, payMethod } = data;
-    const now = Date.now();
-
-    if (!orderId) {
-      throw new Error('无效的参数');
-    }
-
-    if (payType !== PayType.AliPay && payType !== PayType.WeChatPay) {
-      throw new Error('无效的参数');
-    }
-
-    const order = await this.orderModel.findOne({ _id: orderId });
-
-    if (!order) {
-      throw new Error('订单不存在');
-    }
-
-    if (now - order.createTime > 15 * 60 * 1000) {
-      throw new Error('订单已过期');
-    }
-
-    const pay = await this.payModel.findOne({ orderId });
-
-    if (pay && pay.code === PayCode.success) {
-      throw new Error('订单已支付');
-    }
-
+  async initScanPay(data: { orderId: string, payType: PayType }): Promise<IScanPayResponse> {
+    const { orderId, payType } = data;
+    const order = await this.orderValid(orderId, payType);
     const nonceStr = guid().replace('-', '');
 
-    if (payMethod === PayMethod.scan) {
-      const payData: IPayData = {
-        mchid: config.merchantID,
-        out_trade_no: orderId,
-        total_fee: order.totalPrice,
-        body: order.remark,
-        notify_url: config.notifyUrl,
-        type: payType,
-        nonce_str: nonceStr,
-        sign: '',
-      };
+    const payData: IPayData = {
+      mchid: config.merchantID,
+      out_trade_no: orderId,
+      total_fee: order.totalPrice,
+      body: order.remark,
+      notify_url: config.notifyUrl,
+      type: payType,
+      nonce_str: nonceStr,
+      sign: '',
+    };
 
-      return await this.scan(payData, order);
-    } else if (payMethod === PayMethod.wap) {
-      let WPAURL = '';
+    return await this.scan(payData, order);
+  }
 
-      switch (order.goodsType) {
-        case GoodsType.article:
-          WPAURL = `${payDomain}/article/detail/${order.goodsId}`;
-          break;
-        default:
-          throw new Error('订单参数异常');
-      }
+  async initWAPPay(data: { orderId: string, payType: PayType }): Promise<IWAPPayResponse> {
+    const { orderId, payType } = data;
+    const order = await this.orderValid(orderId, payType);
+    const nonceStr = guid().replace('-', '');
+    const WPAURL = this.getRedirectURL(order);
 
-      const payData: IWAPPayData = {
-        mchid: config.merchantID,
-        out_trade_no: orderId,
-        total_fee: order.totalPrice,
-        body: order.remark,
-        notify_url: config.notifyUrl,
-        type: PayType.WeChatPay,
-        nonce_str: nonceStr,
-        sign: '',
-        trade_type: 'WAP',
-        wap_url: WPAURL,
-        wap_name: '吼吼',
-      };
+    const payData: IWAPPayData = {
+      mchid: config.merchantID,
+      out_trade_no: orderId,
+      total_fee: order.totalPrice,
+      body: order.remark,
+      notify_url: config.notifyUrl,
+      type: PayType.WeChatPay,
+      nonce_str: nonceStr,
+      sign: '',
+      trade_type: 'WAP',
+      wap_url: WPAURL,
+      wap_name: '吼吼',
+    };
 
-      return await this.wap(payData, order);
-    }
+    return await this.wap(payData, order);
+  }
+
+  async initCashierPay(data: { orderId: string, payType: PayType }): Promise<ICashierPayData> {
+    const { orderId, payType } = data;
+    const order = await this.orderValid(orderId, payType);
+    const nonceStr = guid().replace('-', '');
+    const redirectURL = this.getRedirectURL(order);
+
+    const payData: ICashierPayData = {
+      mchid: config.merchantID,
+      out_trade_no: orderId,
+      total_fee: order.totalPrice,
+      body: order.remark,
+      notify_url: config.notifyUrl,
+      type: payType,
+      nonce_str: nonceStr,
+      sign: '',
+      redirect_url: redirectURL,
+    };
+
+    return await this.cashier(payData, order);
   }
 
   async queryStatus(orderId: string): Promise<{ code: PayCode, status: string }> {
@@ -164,16 +155,27 @@ export default class PayService {
     return scanResult;
   }
 
-  private async generatePay(data: IPayData, order: OrderEntity, payResponse: IPayResponse): Promise<void> {
-    if (payResponse.return_code.toLowerCase() !== PayReturnCode.success) {
-      throw new Error(payResponse.err_msg);
-    }
+  private async cashier(data: ICashierPayData, order: OrderEntity): Promise<ICashierPayData> {
+    const sign = this.sign(data);
+    data.sign = sign;
 
-    const scanResultSign = payResponse.sign;
-    const sign2 = this.sign(payResponse);
+    await this.generatePay(data, order);
 
-    if (scanResultSign !== sign2) {
-      throw new Error('非法的签名');
+    return data;
+  }
+
+  private async generatePay(data: IPayData, order: OrderEntity, payResponse?: IPayResponse): Promise<void> {
+    if (payResponse) {
+      if (payResponse.return_code.toLowerCase() !== PayReturnCode.success) {
+        throw new Error(payResponse.err_msg);
+      }
+
+      const scanResultSign = payResponse.sign;
+      const sign2 = this.sign(payResponse);
+
+      if (scanResultSign !== sign2) {
+        throw new Error('非法的签名');
+      }
     }
 
     const orderIsExist = await this.payModel.findOne({ orderId: data.out_trade_no });
@@ -192,6 +194,50 @@ export default class PayService {
         createTime: Date.now(),
       });
     }
+  }
+
+  private getRedirectURL(order: OrderEntity): string {
+    let redirectURL = '';
+
+    switch (order.goodsType) {
+      case GoodsType.article:
+        redirectURL = `${payDomain}/article/detail/${order.goodsId}`;
+        break;
+      default:
+        throw new Error('订单参数异常');
+    }
+
+    return redirectURL;
+  }
+
+  private async orderValid(orderId: string, payType: PayType): Promise<OrderEntity> {
+    const now = Date.now();
+
+    if (!orderId) {
+      throw new Error('无效的参数');
+    }
+
+    if (payType !== PayType.AliPay && payType !== PayType.WeChatPay) {
+      throw new Error('无效的参数');
+    }
+
+    const order = await this.orderModel.findOne({ _id: orderId });
+
+    if (!order) {
+      throw new Error('订单不存在');
+    }
+
+    if (now - order.createTime > 15 * 60 * 1000) {
+      throw new Error('订单已过期');
+    }
+
+    const pay = await this.payModel.findOne({ orderId });
+
+    if (pay && pay.code === PayCode.success) {
+      throw new Error('订单已支付');
+    }
+
+    return order;
   }
 
   private sign<T extends { sign: string }>(data: T): string {
