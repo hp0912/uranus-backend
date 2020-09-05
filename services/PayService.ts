@@ -1,15 +1,17 @@
 import axios from 'axios';
 import crypto from 'crypto';
 import { Inject, Service } from 'typedi';
-import { OrderCode, OrderEntity } from '../common/schema/OrderEntity';
+import { GoodsType, OrderCode, OrderEntity } from '../common/schema/OrderEntity';
 import { PayCode, PayMethod, PayType } from '../common/schema/PayEntity';
-import { IPayData, IPayNotifyRequest, IScanPayResponse, IUser, PayReturnCode } from '../common/types/commom';
+import { IPayData, IPayNotifyRequest, IPayResponse, IScanPayResponse, IUser, IWAPPayData, IWAPPayResponse, PayReturnCode } from '../common/types/commom';
 import config from '../config';
 import OrderModel from '../models/OrderModel';
 import PayModel from '../models/PayModel';
 import { guid } from '../utils';
 
+const payDomain = 'https://houhoukang.com';
 const scanURL = 'https://admin.xunhuweb.com/pay/payment';
+const WAPURL = 'https://admin.xunhuweb.com/pay/payment';
 
 @Service()
 export default class PayService {
@@ -18,7 +20,7 @@ export default class PayService {
   @Inject()
   private payModel: PayModel;
 
-  async initPay(data: { orderId: string, payType: PayType, payMethod: PayMethod }, user: IUser): Promise<IScanPayResponse> {
+  async initPay(data: { orderId: string, payType: PayType, payMethod: PayMethod }, user: IUser): Promise<IScanPayResponse | IWAPPayResponse> {
     const { orderId, payType, payMethod } = data;
     const now = Date.now();
 
@@ -47,19 +49,46 @@ export default class PayService {
     }
 
     const nonceStr = guid().replace('-', '');
-    const payData: IPayData = {
-      mchid: config.merchantID,
-      out_trade_no: orderId,
-      total_fee: order.totalPrice,
-      body: order.remark,
-      notify_url: config.notifyUrl,
-      type: payType,
-      nonce_str: nonceStr,
-      sign: '',
-    };
 
     if (payMethod === PayMethod.scan) {
+      const payData: IPayData = {
+        mchid: config.merchantID,
+        out_trade_no: orderId,
+        total_fee: order.totalPrice,
+        body: order.remark,
+        notify_url: config.notifyUrl,
+        type: payType,
+        nonce_str: nonceStr,
+        sign: '',
+      };
+
       return await this.scan(payData, order);
+    } else if (payMethod === PayMethod.wap) {
+      let WPAURL = '';
+
+      switch (order.goodsType) {
+        case GoodsType.article:
+          WPAURL = `${payDomain}/article/detail/${order.goodsId}`;
+          break;
+        default:
+          throw new Error('订单参数异常');
+      }
+
+      const payData: IWAPPayData = {
+        mchid: config.merchantID,
+        out_trade_no: orderId,
+        total_fee: order.totalPrice,
+        body: order.remark,
+        notify_url: config.notifyUrl,
+        type: PayType.WeChatPay,
+        nonce_str: nonceStr,
+        sign: '',
+        trade_type: 'WAP',
+        wap_url: WPAURL,
+        wap_name: '吼吼',
+      };
+
+      return await this.wap(payData, order);
     }
   }
 
@@ -111,13 +140,37 @@ export default class PayService {
     });
 
     const scanResult: IScanPayResponse = scanResponse.data;
+    await this.generatePay(data, order, scanResult);
 
-    if (scanResult.return_code.toLowerCase() !== PayReturnCode.success) {
-      throw new Error(scanResult.err_msg);
+    return scanResult;
+  }
+
+  private async wap(data: IWAPPayData, order: OrderEntity): Promise<IWAPPayResponse> {
+    const sign = this.sign(data);
+    data.sign = sign;
+
+    const scanResponse = await axios({
+      method: 'POST',
+      url: WAPURL,
+      data,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const scanResult: IWAPPayResponse = scanResponse.data;
+    await this.generatePay(data, order, scanResult);
+
+    return scanResult;
+  }
+
+  private async generatePay(data: IPayData, order: OrderEntity, payResponse: IPayResponse): Promise<void> {
+    if (payResponse.return_code.toLowerCase() !== PayReturnCode.success) {
+      throw new Error(payResponse.err_msg);
     }
 
-    const scanResultSign = scanResult.sign;
-    const sign2 = this.sign(scanResult);
+    const scanResultSign = payResponse.sign;
+    const sign2 = this.sign(payResponse);
 
     if (scanResultSign !== sign2) {
       throw new Error('非法的签名');
@@ -139,8 +192,6 @@ export default class PayService {
         createTime: Date.now(),
       });
     }
-
-    return scanResult;
   }
 
   private sign<T extends { sign: string }>(data: T): string {

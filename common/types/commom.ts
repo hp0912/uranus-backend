@@ -34,6 +34,12 @@ export interface IPayData {
   sign: string; // 签名
 }
 
+export interface IWAPPayData extends IPayData {
+  trade_type: 'WAP';
+  wap_url: string;
+  wap_name: string;
+}
+
 export enum PayReturnCode {
   success = 'success',
   fail = 'fail',
@@ -51,11 +57,14 @@ export interface IPayResponse {
   order_id: string;
   out_trade_no: string;
   total_fee: string;
-  code_url: string;
 }
 
 export interface IScanPayResponse extends IPayResponse {
   code_url: string;
+}
+
+export interface IWAPPayResponse extends IPayResponse {
+  mweb_url: string;
 }
 
 export interface IPayNotifyRequest {
