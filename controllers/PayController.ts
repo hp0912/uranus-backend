@@ -1,7 +1,7 @@
 import { Authorized, Body, Ctx, CurrentUser, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { PayCode, PayMethod, PayType } from "../common/schema/PayEntity";
-import { IHttpResult, IPayNotifyRequest, IScanPayResponse, IUser } from "../common/types/commom";
+import { IHttpResult, IPayNotifyRequest, IScanPayResponse, IUser, IWAPPayResponse } from "../common/types/commom";
 import PayService from "../services/PayService";
 
 @JsonController('/pay')
@@ -16,7 +16,7 @@ export class PayController {
     @Ctx() ctx,
     @Body() data: { orderId: string, payType: PayType, payMethod: PayMethod },
     @CurrentUser() user?: IUser,
-  ): Promise<IHttpResult<IScanPayResponse>> {
+  ): Promise<IHttpResult<IScanPayResponse | IWAPPayResponse>> {
     const payData = await this.payService.initPay(data, user);
 
     return { code: 200, message: '', data: payData };
