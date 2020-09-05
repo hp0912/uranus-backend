@@ -193,6 +193,20 @@ export default class PayService {
         third_party_order_id: '',
         createTime: Date.now(),
       });
+    } else {
+      const payResult = await this.payModel.findOneAndUpdate(
+        { orderId: data.out_trade_no, code: { $ne: PayCode.success } } as any,
+        {
+          userId: order.buyerId,
+          amount: data.total_fee,
+          payType: data.type,
+          method: PayMethod.scan,
+        },
+      );
+
+      if (!payResult) {
+        throw new Error('重复支付');
+      }
     }
   }
 
