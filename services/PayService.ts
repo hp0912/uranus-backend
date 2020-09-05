@@ -81,7 +81,7 @@ export default class PayService {
       return false;
     }
 
-    if (return_code !== PayReturnCode.success || status !== 'complete') {
+    if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
       await Promise.all([
         this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.failure, status: err_msg }),
         this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.failure, status: err_msg, transaction_id, third_party_order_id: order_id }, { upsert: true }),
