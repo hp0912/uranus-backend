@@ -76,7 +76,7 @@ export interface IRefundResponse extends IPayResponse {
 }
 
 export interface IPayNotifyRequest {
-  return_code: string;
+  return_code: PayReturnCode;
   return_msg?: string;
   err_code?: string;
   err_msg?: string;
@@ -90,6 +90,8 @@ export interface IPayNotifyRequest {
   status: 'complete';
   time_end: string;
   attach?: string;
+  refund_id?: string; // 退款单号
+  refund_status?: PayReturnCode; // 退款状态
 }
 
 export interface ICommentEntity extends CommentEntity {

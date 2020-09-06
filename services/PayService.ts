@@ -105,7 +105,7 @@ export default class PayService {
   }
 
   async notify(data: IPayNotifyRequest): Promise<boolean> {
-    const { sign, return_code, status, transaction_id, out_trade_no, order_id, err_msg } = data;
+    const { sign, return_code, status, transaction_id, out_trade_no, order_id, err_msg, refund_status } = data;
     const vSign = this.sign(data);
     console.log(`交易回调起始 ->`);
     console.log(JSON.stringify(data, null, 2));
@@ -122,7 +122,7 @@ export default class PayService {
       return false;
     }
 
-    const isRefund = !!pay.refund_no;
+    const isRefund = !!refund_status;
 
     if (!isRefund) {
       if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
@@ -142,7 +142,7 @@ export default class PayService {
       console.log(`交易回调支付通知结束, 订单号: ${out_trade_no}支付成功. 服务商返回信息: ${data.return_msg}, 返回状态: ${data.status}`);
       return true;
     } else {
-      if (return_code.toLowerCase() !== PayReturnCode.success) {
+      if (return_code.toLowerCase() !== PayReturnCode.success || refund_status.toLowerCase() !== PayReturnCode.success) {
         console.error(`交易回调通知: ${out_trade_no}服务商返回退款失败, 错误: ${err_msg}`);
         await Promise.all([
           this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.refund_fail, status: err_msg }),
