@@ -224,7 +224,7 @@ export default class PayService {
     });
 
     const scanResult: IScanPayResponse = scanResponse.data;
-    await this.generatePay(data, order, scanResult);
+    await this.generatePay(PayMethod.scan, data, order, scanResult);
 
     return scanResult;
   }
@@ -243,7 +243,7 @@ export default class PayService {
     });
 
     const scanResult: IWAPPayResponse = scanResponse.data;
-    await this.generatePay(data, order, scanResult);
+    await this.generatePay(PayMethod.wap, data, order, scanResult);
 
     return scanResult;
   }
@@ -252,12 +252,12 @@ export default class PayService {
     const sign = this.sign(data);
     data.sign = sign;
 
-    await this.generatePay(data, order);
+    await this.generatePay(PayMethod.cashier, data, order);
 
     return data;
   }
 
-  private async generatePay(data: IPayData, order: OrderEntity, payResponse?: IPayResponse): Promise<void> {
+  private async generatePay(payMethod: PayMethod, data: IPayData, order: OrderEntity, payResponse?: IPayResponse): Promise<void> {
     if (payResponse) {
       if (payResponse.return_code.toLowerCase() !== PayReturnCode.success) {
         throw new Error(payResponse.err_msg);
@@ -281,7 +281,7 @@ export default class PayService {
         code: PayCode.init,
         status: '订单初始化',
         payType: data.type,
-        method: PayMethod.scan,
+        method: payMethod,
         transaction_id: '',
         third_party_order_id: '',
         createTime: Date.now(),
