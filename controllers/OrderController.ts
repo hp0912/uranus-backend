@@ -1,4 +1,4 @@
-import { Authorized, Body, Ctx, CurrentUser, JsonController, Post } from "routing-controllers";
+import { Authorized, Body, Ctx, CurrentUser, Get, JsonController, Post, QueryParam } from "routing-controllers";
 import { Inject, Service } from "typedi";
 import { GoodsType, OrderEntity } from "../common/schema/OrderEntity";
 import { IHttpResult, IUser } from "../common/types/commom";
@@ -20,5 +20,33 @@ export class OrderController {
     const order = await this.orderService.generateOrder(data, user);
 
     return { code: 200, message: '提交订单成功，请尽快支付', data: order };
+  }
+
+  @Authorized()
+  @Get('/receivables')
+  async receivables(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<{ orders: OrderEntity[], total: number }>> {
+    const orderResult = await this.orderService.receivables({ current, pageSize, searchValue }, user);
+
+    return { code: 200, message: '', data: orderResult };
+  }
+
+  @Authorized()
+  @Get('/mine')
+  async mine(
+    @Ctx() ctx,
+    @QueryParam("current", { required: false }) current?: number,
+    @QueryParam("pageSize", { required: false }) pageSize?: number,
+    @QueryParam("searchValue", { required: false }) searchValue?: string,
+    @CurrentUser() user?: IUser,
+  ): Promise<IHttpResult<{ orders: OrderEntity[], total: number }>> {
+    const orderResult = await this.orderService.mine({ current, pageSize, searchValue }, user);
+
+    return { code: 200, message: '', data: orderResult };
   }
 }

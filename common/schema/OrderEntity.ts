@@ -8,6 +8,7 @@ export enum OrderCode {
   init = 0,
   success = 200,
   failure = 500,
+  refund = 204,
 }
 
 @index({ goodsType: 1, goodsId: 1, buyerId: 1 }, { unique: false })
@@ -39,6 +40,9 @@ export class OrderEntity {
 
   @prop({ required: false })
   status?: string;
+
+  @prop({ required: false, default: false }) // 结算
+  settled?: boolean;
 
   @prop({ required: true })
   createTime: number;

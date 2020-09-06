@@ -33,7 +33,7 @@ export default class OrderService {
 
         sellerId = article.createdBy;
         price = article.amount * 100; // 单位：分
-        remark = `吼吼: ${article.title}`;
+        remark = article.title;
         break;
       default:
         throw new Error('无效的商品类别');
@@ -58,5 +58,30 @@ export default class OrderService {
     };
 
     return await this.orderModel.save(order);
+  }
+
+  async getOrders(options: { current?: number, pageSize?: number, searchValue?: string }, filter: Partial<OrderEntity>): Promise<{ orders: OrderEntity[], total: number }> {
+    const { current, pageSize, searchValue } = options;
+    const limit = pageSize ? pageSize : 15;
+    const offset = current ? (current - 1) * limit : 0;
+    const sorter = { _id: -1 };
+    const conditions = searchValue ? { ...filter, remark: { $regex: new RegExp(searchValue) } } as any : { ...filter };
+
+    const [orders, total] = await Promise.all([
+      this.orderModel.findAdvanced({ conditions, offset, limit, sorter }),
+      this.orderModel.countDocuments(conditions),
+    ]);
+
+    return { orders, total };
+  }
+
+  async receivables(options: { current?: number, pageSize?: number, searchValue?: string }, user: UserEntity): Promise<{ orders: OrderEntity[], total: number }> {
+    const filter = { sellerId: user.id, code: OrderCode.success, settled: false };
+    return this.getOrders(options, filter);
+  }
+
+  async mine(options: { current?: number, pageSize?: number, searchValue?: string }, user: UserEntity): Promise<{ orders: OrderEntity[], total: number }> {
+    const filter = { buyerId: user.id, code: { $in: [OrderCode.success, OrderCode.failure, OrderCode.refund] } } as any;
+    return this.getOrders(options, filter);
   }
 }

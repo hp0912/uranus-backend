@@ -4,6 +4,7 @@ export enum PayCode {
   init = 0,
   success = 200,
   failure = 500,
+  refund = 204,
 }
 
 export enum PayType {
@@ -49,6 +50,9 @@ export class PayEntity {
 
   @prop({ required: false })
   transaction_id?: string;
+
+  @prop({ required: false }) // 退款单号
+  refund_no?: string;
 
   @prop({ required: true })
   createTime?: number;
