@@ -138,10 +138,10 @@ export default class PayService {
         this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.success, status: '支付成功', transaction_id, third_party_order_id: order_id }),
       ]);
 
-      console.log(`交易回调通知, 订单号: ${out_trade_no}支付成功.`);
+      console.log(`交易回调通知, 订单号: ${out_trade_no}支付成功. 服务商返回信息: ${data.return_msg}, 返回状态: ${data.status}`);
       return true;
     } else {
-      if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
+      if (return_code.toLowerCase() !== PayReturnCode.success) {
         console.error(`交易回调通知: ${out_trade_no}服务商返回退款失败, 错误: ${err_msg}`);
         await Promise.all([
           this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.refund_fail, status: err_msg }),
@@ -155,7 +155,7 @@ export default class PayService {
         this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.refunded, status: '退款成功' }),
       ]);
 
-      console.log(`交易回调通知, 订单号: ${out_trade_no}退款成功.`);
+      console.log(`交易回调通知, 订单号: ${out_trade_no}退款成功. 服务商返回信息: ${data.return_msg}, 返回状态: ${data.status}`);
       return true;
     }
   }
