@@ -3,7 +3,7 @@ import { ArticleCategory, ArticleEntity, AuditStatus, ShareWith } from '../commo
 import { GoodsType, OrderCode } from '../common/schema/OrderEntity';
 import { TagEntity } from '../common/schema/TagEntity';
 import { TokenEntity, TokenType } from '../common/schema/TokenEntity';
-import { UserEntity } from '../common/schema/UserEntity';
+import { UserEntity, UserSensitiveInfo } from '../common/schema/UserEntity';
 import { IUser } from '../common/types/commom';
 import ArticleModel from '../models/ArticleModel';
 import OrderModel from '../models/OrderModel';
@@ -43,7 +43,7 @@ export default class ArticleService {
       throw new Error('该文章不存在');
     }
 
-    const author = await this.userModel.findOne({ _id: article.createdBy });
+    const author = await this.userModel.findOne({ _id: article.createdBy }, UserSensitiveInfo);
     let tokenResult: TokenEntity = null;
 
     if (token) {
@@ -138,7 +138,7 @@ export default class ArticleService {
     });
 
     if (userIds.length) {
-      tasks.push(this.userModel.find({ _id: { $in: userIds } as any }));
+      tasks.push(this.userModel.find({ _id: { $in: userIds } as any }, UserSensitiveInfo));
     } else {
       tasks.push(Promise.resolve([]));
     }
@@ -188,7 +188,7 @@ export default class ArticleService {
       return { articles, users: [], total };
     }
 
-    const users = await this.userModel.find({ _id: { $in: userIds } as any });
+    const users = await this.userModel.find({ _id: { $in: userIds } as any }, UserSensitiveInfo);
     return { articles, users, total };
   }
 

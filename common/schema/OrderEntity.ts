@@ -8,7 +8,9 @@ export enum OrderCode {
   init = 0,
   success = 200,
   failure = 500,
-  refund = 204,
+  refunding = 201,
+  refunded = 202,
+  refund_fail = 204,
 }
 
 @index({ goodsType: 1, goodsId: 1, buyerId: 1 }, { unique: false })

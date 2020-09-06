@@ -1,8 +1,10 @@
 import { Inject, Service } from 'typedi';
 import { GoodsType, OrderCode, OrderEntity } from '../common/schema/OrderEntity';
-import { UserEntity } from '../common/schema/UserEntity';
+import { UserEntity, UserSensitiveInfo } from '../common/schema/UserEntity';
 import ArticleModel from '../models/ArticleModel';
 import OrderModel from '../models/OrderModel';
+import UserModel from '../models/UserModel';
+import PayService from './PayService';
 
 @Service()
 export default class OrderService {
@@ -10,6 +12,11 @@ export default class OrderService {
   private articleModel: ArticleModel;
   @Inject()
   private orderModel: OrderModel;
+  @Inject()
+  private userModel: UserModel;
+
+  @Inject()
+  private payService: PayService;
 
   async generateOrder(data: { goodsType: GoodsType, goodsId: string }, user: UserEntity): Promise<OrderEntity> {
     const { goodsType, goodsId } = data;
@@ -77,11 +84,57 @@ export default class OrderService {
 
   async receivables(options: { current?: number, pageSize?: number, searchValue?: string }, user: UserEntity): Promise<{ orders: OrderEntity[], total: number }> {
     const filter = { sellerId: user.id, code: OrderCode.success, settled: false };
-    return this.getOrders(options, filter);
+    return await this.getOrders(options, filter);
   }
 
   async mine(options: { current?: number, pageSize?: number, searchValue?: string }, user: UserEntity): Promise<{ orders: OrderEntity[], total: number }> {
-    const filter = { buyerId: user.id, code: { $in: [OrderCode.success, OrderCode.failure, OrderCode.refund] } } as any;
-    return this.getOrders(options, filter);
+    const filter = { buyerId: user.id, code: { $in: [OrderCode.success, OrderCode.failure, OrderCode.refunding, OrderCode.refunded, OrderCode.refund_fail] } } as any;
+    return await this.getOrders(options, filter);
+  }
+
+  async getOrdersForAdmin(options: { current?: number, pageSize?: number, searchValue?: string }, user: UserEntity): Promise<{ orders: OrderEntity[], users: UserEntity[], total: number }> {
+    const filter = {};
+    const { orders, total } = await this.getOrders(options, filter);
+    const userMap: { [userId: string]: boolean } = {};
+    let users: UserEntity[] = [];
+
+    orders.forEach(order => {
+      userMap[order.buyerId] = true;
+      userMap[order.sellerId] = true;
+    });
+
+    const userIds = Object.keys(userMap);
+
+    if (userIds.length) {
+      users = await this.userModel.find({ _id: { $in: userIds } } as any, UserSensitiveInfo);
+    }
+
+    return { orders, users, total };
+  }
+
+  async orderRefundForAdmin(orderId: string): Promise<void> {
+    const order = await this.orderModel.findOne({ _id: orderId });
+
+    if (!order) {
+      throw new Error('不存在的订单');
+    }
+
+    if (order.code === OrderCode.init) {
+      throw new Error('订单未支付');
+    }
+
+    if (order.code === OrderCode.failure) {
+      throw new Error('订单支付失败');
+    }
+
+    if (order.code === OrderCode.refunding) {
+      throw new Error('订单退款中，请勿重复操作');
+    }
+
+    if (order.code === OrderCode.refunded) {
+      throw new Error('订单已经退款了');
+    }
+
+    await this.payService.refund(orderId);
   }
 }

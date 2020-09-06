@@ -3,7 +3,17 @@ import crypto from 'crypto';
 import { Inject, Service } from 'typedi';
 import { GoodsType, OrderCode, OrderEntity } from '../common/schema/OrderEntity';
 import { PayCode, PayMethod, PayType } from '../common/schema/PayEntity';
-import { ICashierPayData, IPayData, IPayNotifyRequest, IPayResponse, IScanPayResponse, IWAPPayData, IWAPPayResponse, PayReturnCode } from '../common/types/commom';
+import {
+  ICashierPayData,
+  IPayData,
+  IPayNotifyRequest,
+  IPayResponse,
+  IRefundResponse,
+  IScanPayResponse,
+  IWAPPayData,
+  IWAPPayResponse,
+  PayReturnCode,
+} from '../common/types/commom';
 import config from '../config';
 import OrderModel from '../models/OrderModel';
 import PayModel from '../models/PayModel';
@@ -12,6 +22,7 @@ import { guid } from '../utils';
 const payDomain = 'https://houhoukang.com';
 const scanURL = 'https://admin.xunhuweb.com/pay/payment';
 const WAPURL = 'https://admin.xunhuweb.com/pay/payment';
+const refundURL = 'https://admin.xunhuweb.com/pay/refund';
 
 @Service()
 export default class PayService {
@@ -96,25 +107,107 @@ export default class PayService {
   async notify(data: IPayNotifyRequest): Promise<boolean> {
     const { sign, return_code, status, transaction_id, out_trade_no, order_id, err_msg } = data;
     const vSign = this.sign(data);
+    console.log(`交易回调通知, 订单号: ${out_trade_no}, 状态: ${return_code}, 错误: ${err_msg}`);
 
     if (vSign !== sign) {
+      console.error(`交易回调通知: ${out_trade_no}签名验证失败.`);
       return false;
     }
 
-    if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
-      await Promise.all([
-        this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.failure, status: err_msg }),
-        this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.failure, status: err_msg, transaction_id, third_party_order_id: order_id }, { upsert: true }),
-      ]);
+    const pay = await this.payModel.findOne({ orderId: out_trade_no });
+
+    if (!pay) {
+      console.error(`${new Date().toISOString()}: 不存在的订单[${out_trade_no}]`);
       return false;
+    }
+
+    const isRefund = !!pay.refund_no;
+
+    if (!isRefund) {
+      if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
+        console.error(`交易回调通知: ${out_trade_no}服务商返回支付失败, 错误: ${err_msg}`);
+        await Promise.all([
+          this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.failure, status: err_msg }),
+          this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.failure, status: err_msg, transaction_id, third_party_order_id: order_id }),
+        ]);
+        return true;
+      }
+
+      await Promise.all([
+        this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.success, status: '支付成功' }),
+        this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.success, status: '支付成功', transaction_id, third_party_order_id: order_id }),
+      ]);
+
+      console.log(`交易回调通知, 订单号: ${out_trade_no}支付成功.`);
+      return true;
+    } else {
+      if (return_code.toLowerCase() !== PayReturnCode.success || status !== 'complete') {
+        console.error(`交易回调通知: ${out_trade_no}服务商返回退款失败, 错误: ${err_msg}`);
+        await Promise.all([
+          this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.refund_fail, status: err_msg }),
+          this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.refund_fail, status: err_msg }),
+        ]);
+        return true;
+      }
+
+      await Promise.all([
+        this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.refunded, status: '退款成功' }),
+        this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.refunded, status: '退款成功' }),
+      ]);
+
+      console.log(`交易回调通知, 订单号: ${out_trade_no}退款成功.`);
+      return true;
+    }
+  }
+
+  async refund(orderId: string): Promise<void> {
+    const pay = await this.payModel.findOne({ orderId });
+
+    if (!pay) {
+      throw new Error('未找到该订单支付记录');
+    }
+
+    const nonceStr = guid().replace('-', '');
+    const refundParams = {
+      mchid: config.merchantID,
+      order_id: pay.third_party_order_id,
+      out_trade_no: orderId,
+      refund_desc: '其他',
+      notify_url: config.notifyUrl,
+      nonce_str: nonceStr,
+      sign: '',
+    };
+
+    const sign = this.sign(refundParams);
+    refundParams.sign = sign;
+
+    const refundResponse = await axios({
+      method: 'POST',
+      url: refundURL,
+      data: refundParams,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const refundResult: IRefundResponse = refundResponse.data;
+    console.log(`${refundResult.out_trade_no}发起退款${refundResult.return_code}～`);
+
+    if (refundResult.return_code.toLowerCase() !== PayReturnCode.success) {
+      throw new Error(refundResult.err_msg);
+    }
+
+    const refundResultSign = refundResult.sign;
+    const sign2 = this.sign(refundResult);
+
+    if (refundResultSign !== sign2) {
+      throw new Error('非法的签名');
     }
 
     await Promise.all([
-      this.orderModel.findOneAndUpdate({ _id: out_trade_no }, { code: OrderCode.success, status: '支付成功' }),
-      this.payModel.findOneAndUpdate({ orderId: out_trade_no }, { code: PayCode.success, status: '支付成功', transaction_id, third_party_order_id: order_id }, { upsert: true }),
+      this.payModel.findOneAndUpdate({ orderId }, { refund_no: refundResult.refund_no, code: PayCode.refunding }),
+      this.orderModel.findOneAndUpdate({ _id: orderId }, { code: OrderCode.refunding }),
     ]);
-
-    return true;
   }
 
   private async scan(data: IPayData, order: OrderEntity): Promise<IScanPayResponse> {

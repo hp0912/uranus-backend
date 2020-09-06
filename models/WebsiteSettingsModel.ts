@@ -4,7 +4,7 @@ import { WebsiteSettingsEntity } from "../common/schema/WebsiteSettingsEntity";
 import BaseModel from './BaseModel';
 
 @Service()
-export default class UserModel extends BaseModel<WebsiteSettingsEntity> {
+export default class WebsiteSettingsModel extends BaseModel<WebsiteSettingsEntity> {
   getName() {
     return 'WebsiteSettings';
   }

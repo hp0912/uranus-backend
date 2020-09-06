@@ -71,6 +71,10 @@ export interface IWAPPayResponse extends IPayResponse {
   mweb_url: string;
 }
 
+export interface IRefundResponse extends IPayResponse {
+  refund_no: string;
+}
+
 export interface IPayNotifyRequest {
   return_code: string;
   return_msg?: string;
