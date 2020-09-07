@@ -68,7 +68,9 @@ export default class ArticleService {
       return { article, user: author };
     } else {
       if (!user) {
-        throw new Error('应作者版权要求, 该文章需付费阅读, 请先登录');
+        // 付费文章，文章内容付费后才能浏览
+        delete article.content;
+        return { article, user: author };
       }
 
       if (user.id === article.createdBy) {

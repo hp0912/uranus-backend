@@ -47,7 +47,7 @@ export async function start() {
       const user = await Container.get<AutnService>(AutnService).checkLogin(action.context);
       action.context.user = user;
       if (!user) {
-        throw new Error('请重新登录');
+        throw new Error('您还未登录或者登录信息已过期');
       }
 
       if (!roles.length) {
