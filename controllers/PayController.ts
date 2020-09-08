@@ -21,19 +21,19 @@ export class PayController {
   @Post('/initPay')
   async initPay(
     @Ctx() ctx,
-    @Body() data: { orderId: string, payType: PayType, payMethod: PayMethod },
+    @Body() data: { orderId: string, payType: PayType, payMethod: PayMethod, token?: string },
     @CurrentUser() user?: IUser,
   ): Promise<IHttpResult<IScanPayResponse | IWAPPayResponse | ICashierPayData>> {
-    const { orderId, payMethod, payType } = data;
+    const { orderId, payMethod, payType, token } = data;
 
     if (payMethod === PayMethod.scan) {
       const payData = await this.payService.initScanPay({ orderId, payType });
       return { code: 200, message: '', data: payData };
     } else if (payMethod === PayMethod.wap) {
-      const payData = await this.payService.initWAPPay({ orderId, payType });
+      const payData = await this.payService.initWAPPay({ orderId, payType, token });
       return { code: 200, message: '', data: payData };
     } else if (payMethod === PayMethod.cashier) {
-      const payData = await this.payService.initCashierPay({ orderId, payType });
+      const payData = await this.payService.initCashierPay({ orderId, payType, token });
       return { code: 200, message: '', data: payData };
     } else {
       throw new Error('非法的参数');

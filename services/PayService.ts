@@ -50,7 +50,7 @@ export default class PayService {
     return await this.scan(payData, order);
   }
 
-  async initWAPPay(data: { orderId: string, payType: PayType }): Promise<IWAPPayResponse> {
+  async initWAPPay(data: { orderId: string, payType: PayType, token?: string }): Promise<IWAPPayResponse> {
     const { orderId, payType } = data;
     const order = await this.orderValid(orderId, payType);
     const nonceStr = guid().replace('-', '');
@@ -73,7 +73,7 @@ export default class PayService {
     return await this.wap(payData, order);
   }
 
-  async initCashierPay(data: { orderId: string, payType: PayType }): Promise<ICashierPayData> {
+  async initCashierPay(data: { orderId: string, payType: PayType, token?: string }): Promise<ICashierPayData> {
     const { orderId, payType } = data;
     const order = await this.orderValid(orderId, payType);
     const nonceStr = guid().replace('-', '');
@@ -292,12 +292,12 @@ export default class PayService {
     }
   }
 
-  private getRedirectURL(order: OrderEntity): string {
+  private getRedirectURL(order: OrderEntity, token?: string): string {
     let redirectURL = '';
 
     switch (order.goodsType) {
       case GoodsType.article:
-        redirectURL = `${payDomain}/article/detail/${order.goodsId}`;
+        redirectURL = `${payDomain}/article/detail/${order.goodsId}${token ? '?token=' + token : ''}`;
         break;
       default:
         throw new Error('订单参数异常');
