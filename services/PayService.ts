@@ -51,10 +51,10 @@ export default class PayService {
   }
 
   async initWAPPay(data: { orderId: string, payType: PayType, token?: string }): Promise<IWAPPayResponse> {
-    const { orderId, payType } = data;
+    const { orderId, payType, token } = data;
     const order = await this.orderValid(orderId, payType);
     const nonceStr = guid().replace('-', '');
-    const WPAURL = this.getRedirectURL(order);
+    const WPAURL = this.getRedirectURL(order, token);
 
     const payData: IWAPPayData = {
       mchid: config.merchantID,
@@ -74,10 +74,10 @@ export default class PayService {
   }
 
   async initCashierPay(data: { orderId: string, payType: PayType, token?: string }): Promise<ICashierPayData> {
-    const { orderId, payType } = data;
+    const { orderId, payType, token } = data;
     const order = await this.orderValid(orderId, payType);
     const nonceStr = guid().replace('-', '');
-    const redirectURL = this.getRedirectURL(order);
+    const redirectURL = this.getRedirectURL(order, token);
 
     const payData: ICashierPayData = {
       mchid: config.merchantID,
