@@ -70,9 +70,9 @@ export class UserController {
   @Post('/getSmsCode')
   async getSmsCode(
     @Ctx() ctx,
-    @Body() data: { phoneNumber: string },
+    @Body() data: { phoneNumber: string, token: string },
   ): Promise<IHttpResult<null>> {
-    await this.userService.getSmsCode(ctx, data.phoneNumber);
+    await this.userService.getSmsCode(ctx, data);
 
     return { code: 200, message: '发送验证码成功', data: null };
   }

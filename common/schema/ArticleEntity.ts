@@ -35,6 +35,9 @@ export class ArticleEntity {
   @prop({ required: false, type: String })
   tags?: string[];
 
+  @prop({ required: false, type: String })
+  keyword?: string[];
+
   @prop({ required: false })
   desc?: string;
 

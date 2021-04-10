@@ -2,6 +2,7 @@ import alicloudSms from '@alicloud/pop-core';
 import * as jwt from 'jsonwebtoken';
 import sha1 from 'sha1';
 import { Inject, Service } from 'typedi';
+import CaptchaSDK from 'dx-captcha-sdk';
 import { UserEntity } from '../common/schema/UserEntity';
 import config from '../config';
 import UserModel from '../models/UserModel';
@@ -15,6 +16,7 @@ export interface ISignUpParams {
 export interface ISignInParams {
   username: string;
   password: string;
+  token: string;
 }
 
 @Service()
@@ -28,6 +30,8 @@ export default class UserService {
     endpoint: 'https://dysmsapi.aliyuncs.com',
     apiVersion: '2017-05-25',
   });
+
+  dxClient = new CaptchaSDK(config.dxAppID, config.dxAppSecret);
 
   async status(ctx): Promise<UserEntity> {
     const session = ctx.cookies.get('uranus_session');
@@ -113,7 +117,8 @@ export default class UserService {
     }
   }
 
-  async getSmsCode(ctx, phoneNumber: string): Promise<void> {
+  async getSmsCode(ctx, data: { phoneNumber: string, token: string }): Promise<void> {
+    const { phoneNumber, token: dxToken } = data;
     const smsCode = (Math.random() + '').substr(2, 6);
     const params = {
       RegionId: 'cn-hangzhou',
@@ -127,7 +132,9 @@ export default class UserService {
       throw new Error('请输入正确的手机号');
     }
 
-    await new Promise((resolve, reject) => {
+    await this.dxClient.verifyToken(dxToken);
+
+    await new Promise<void>((resolve, reject) => {
       this.smsClient.request('SendSms', params, { method: 'POST' }).then((result) => {
         console.log('短信验证码: ', phoneNumber, JSON.stringify(result));
         resolve();
@@ -163,7 +170,7 @@ export default class UserService {
   }
 
   async signIn(ctx, data: ISignInParams): Promise<UserEntity> {
-    const { username, password } = data;
+    const { username, password, token } = data;
 
     if (!username || !username.match(/^[1][3578]\d{9}$/)) {
       throw new Error('请输入正确的手机号');
@@ -172,6 +179,8 @@ export default class UserService {
     if (!password || !password.match(/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/)) {
       throw new Error('密码至少为6位，并且要同时包含大、小写字母和数字');
     }
+
+    await this.dxClient.verifyToken(token);
 
     const passwordSha1 = sha1(password + sha1(config.passsalt));
 

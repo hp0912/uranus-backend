@@ -203,7 +203,7 @@ export default class ArticleService {
   }
 
   async articleSave(data: ArticleEntity, user: UserEntity): Promise<ArticleEntity> {
-    const { id, title, category, coverPicture, tags, desc, content, charge, shareWith } = data;
+    const { id, title, category, coverPicture, tags, desc, content, charge, shareWith, keyword } = data;
     let { amount } = data;
     let auditStatus: AuditStatus = AuditStatus.unapprove;
     let saveResult: ArticleEntity;
@@ -243,7 +243,7 @@ export default class ArticleService {
     const now = Date.now();
 
     if (id === 'new') {
-      saveResult = await this.articleModel.save({ title, category, coverPicture, tags, desc, content, charge, amount, shareWith, auditStatus, createdBy: user.id, createdTime: now, modifyBy: user.id, modifyTime: now });
+      saveResult = await this.articleModel.save({ title, category, coverPicture, tags, keyword, desc, content, charge, amount, shareWith, auditStatus, createdBy: user.id, createdTime: now, modifyBy: user.id, modifyTime: now });
     } else {
       const history = await this.articleModel.findOne({ _id: id });
 
@@ -255,7 +255,7 @@ export default class ArticleService {
         throw new Error('非法的请求');
       }
 
-      saveResult = await this.articleModel.findOneAndUpdate({ _id: id }, { title, category, coverPicture, tags, desc, content, charge, amount, shareWith, auditStatus, modifyBy: user.id, modifyTime: now });
+      saveResult = await this.articleModel.findOneAndUpdate({ _id: id }, { title, category, coverPicture, tags, keyword, desc, content, charge, amount, shareWith, auditStatus, modifyBy: user.id, modifyTime: now });
     }
 
     return saveResult;
