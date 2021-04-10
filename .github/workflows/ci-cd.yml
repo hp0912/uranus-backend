@@ -26,20 +26,20 @@ jobs:
       uses: steebchen/kubectl@master
       env:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
-        KUBECTL_VERSION: "1.14"
+        KUBECTL_VERSION: "1.15"
       with:
         args: apply -f .deploy/deployment.yml
     - name: k8s service
       uses: steebchen/kubectl@master
       env:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
-        KUBECTL_VERSION: "1.14"
+        KUBECTL_VERSION: "1.15"
       with:
         args: apply -f .deploy/service.yml
     - name: deployment status
       uses: steebchen/kubectl@master
       env:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
-        KUBECTL_VERSION: "1.14"
+        KUBECTL_VERSION: "1.15"
       with:
         args: '"rollout status deployment/uranus-backend"'
