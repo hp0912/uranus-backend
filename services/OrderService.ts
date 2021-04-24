@@ -3,6 +3,7 @@ import { GoodsType, OrderCode, OrderEntity } from '../common/schema/OrderEntity'
 import { UserEntity, UserSensitiveInfo } from '../common/schema/UserEntity';
 import ArticleModel from '../models/ArticleModel';
 import OrderModel from '../models/OrderModel';
+import WatermelonModel from '../models/WatermelonModel';
 import UserModel from '../models/UserModel';
 import PayService from './PayService';
 
@@ -12,6 +13,8 @@ export default class OrderService {
   private articleModel: ArticleModel;
   @Inject()
   private orderModel: OrderModel;
+  @Inject()
+  private watermelonModel: WatermelonModel;
   @Inject()
   private userModel: UserModel;
 
@@ -42,6 +45,17 @@ export default class OrderService {
         price = article.amount * 100; // 单位：分
         remark = article.title;
         break;
+      case GoodsType.watermelon:
+        const watermelon = await this.watermelonModel.findOne({ _id: goodsId });
+
+        if (!watermelon) {
+          throw new Error('不存在的游戏路径');
+        }
+
+        sellerId = '5f5c72771fbd97001c723ffd'; // 管理员
+        price = watermelon.amount * 100; // 单位：分
+        remark = watermelon.path;
+        break;
       default:
         throw new Error('无效的商品类别');
     }
@@ -49,7 +63,7 @@ export default class OrderService {
     const orderSucceed = await this.orderModel.findOne({ goodsType, goodsId, buyerId: userId, code: OrderCode.success });
 
     if (orderSucceed) {
-      throw new Error('该文章您已经支付过了');
+      throw new Error('该订单您已经支付过了');
     }
 
     const order: OrderEntity = {
