@@ -2,6 +2,7 @@ import { index, prop } from '@typegoose/typegoose';
 
 export enum GoodsType {
   article = 'article',
+  watermelon = 'watermelon',
 }
 
 export enum OrderCode {

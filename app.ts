@@ -17,6 +17,7 @@ import { STSController } from './controllers/STSController';
 import { TagController } from './controllers/TagController';
 import { TokenController } from './controllers/TokenController';
 import { UserController } from './controllers/UserController';
+import { WatermelonController } from './controllers/WatermelonController';
 import { WebsiteSettingsController } from './controllers/WebsiteSettingsController';
 import { WeChatController } from './controllers/WeChatController';
 import ErrorMiddleware from './middleware/ErrorMiddleware';
@@ -79,6 +80,7 @@ export async function start() {
       TagController,
       TokenController,
       UserController,
+      WatermelonController,
       WebsiteSettingsController,
       WeChatController,
     ],
