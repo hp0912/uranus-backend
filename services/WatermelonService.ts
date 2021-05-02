@@ -28,11 +28,15 @@ export default class WatermelonService {
   });
   Policy = JSON.stringify(config.STSPolicy);
 
-  async STSAuth(path: string, user: IUser): Promise<ISTSAuthResult> {
+  async STSAuth(user: IUser, path?: string): Promise<ISTSAuthResult> {
     const policy = JSON.parse(this.Policy);
-    // policy.Statement[0].Resource[0] = `acs:oss:*:*:uranus-lemon/template/*`;
-    // policy.Statement[0].Resource[1] = `acs:oss:*:*:uranus-lemon/${path}/*`;
-    policy.Statement[0].Resource[0] = `acs:oss:*:*:uranus-lemon/*`;
+
+    if (path) {
+      policy.Statement[0].Resource[1] = `acs:oss:*:*:uranus-lemon/${path}/*`;
+    } else {
+      policy.Statement[0].Resource[0] = `acs:oss:*:*:uranus-lemon`;
+      policy.Statement[0].Resource[1] = `acs:oss:*:*:uranus-lemon/*`;
+    }
     const Policy = JSON.stringify(policy);
 
     const stsToken = await this.STSClient.request<{
@@ -49,6 +53,18 @@ export default class WatermelonService {
       ...stsToken.Credentials,
       Policy,
     };
+  }
+
+  async copyFileFromTemplate(ossClient: OSS, objects: string[], target: string) {
+    if (objects && objects.length) {
+      const steps = Math.ceil(objects.length / 6);
+      for (let i = 0; i < steps; i++) {
+        const current = objects.slice(i * 6, i * 6 + 6);
+        await Promise.all(current.map(obj => {
+          ossClient.copy(obj.replace(/^template/, target), obj);
+        }));
+      }
+    }
   }
 
   async get(ctx, user: IUser): Promise<WatermelonEntity[]> {
@@ -103,16 +119,18 @@ export default class WatermelonService {
         amount = 5.99;
       }
 
-      await this.watermelonModel.save({
+      const saveRes = await this.watermelonModel.save({
         userId: user.id,
         path,
         amount,
         code: payCode,
+        init_failed: false,
         addtime: now,
       });
+
       await this.distributedLockModel.unlock(user.id);
 
-      const stsResult = await this.STSAuth(path, user);
+      const stsResult = await this.STSAuth(user);
       const ossClient = new OSS({
         bucket: 'uranus-lemon',
         region: 'oss-cn-shenzhen',
@@ -121,10 +139,48 @@ export default class WatermelonService {
         stsToken: stsResult.SecurityToken,
         secure: true,
       });
-      await ossClient.copy(path, 'template/');
+      try {
+        const { objects } = await ossClient.list({ "max-keys": 1000, prefix: "template" }, {});
+        await this.copyFileFromTemplate(ossClient, objects.map(item => item.name), path);
+      } catch (ex) {
+        await this.watermelonModel.findOneAndUpdate({ _id: saveRes.id }, { init_failed: true });
+      }
     } else {
       throw new Error('系统繁忙，请稍后再试');
     }
     return await this.watermelonModel.find({ userId: user.id });
+  }
+
+  async UploadTokenGet(ctx, user: IUser, path: string): Promise<ISTSAuthResult> {
+    const pathInfo = await this.watermelonModel.findOne({ userId: user.id, path });
+
+    if (!pathInfo) {
+      throw new Error('游戏路径记录未找到');
+    }
+
+    if (pathInfo.code !== PayCode.success) {
+      throw new Error('游戏路径记录待支付');
+    }
+
+    if (pathInfo.init_failed) {
+      const stsResult = await this.STSAuth(user);
+      const ossClient = new OSS({
+        bucket: 'uranus-lemon',
+        region: 'oss-cn-shenzhen',
+        accessKeyId: stsResult.AccessKeyId,
+        accessKeySecret: stsResult.AccessKeySecret,
+        stsToken: stsResult.SecurityToken,
+        secure: true,
+      });
+      try {
+        const { objects } = await ossClient.list({ "max-keys": 1000, prefix: "template" }, {});
+        await this.copyFileFromTemplate(ossClient, objects.map(item => item.name), path);
+      } catch (ex) {
+        throw ex;
+      }
+      return stsResult;
+    } else {
+      return await this.STSAuth(user, path);
+    }
   }
 }
