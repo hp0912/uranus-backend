@@ -27,6 +27,8 @@ const config = {
   synNotifyUrl: '', // 客户端同步跳转
   githubClientID: '',
   githubClientSecret: '',
+  qqClientID: '',
+  qqClientSecret: '',
   merchantID: '',
   merchantSecret: '',
   notifyUrl: '',

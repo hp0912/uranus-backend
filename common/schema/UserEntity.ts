@@ -49,6 +49,9 @@ export class UserEntity {
 
   @prop({ required: false })
   githubNodeId?: string;
+
+  @prop({ required: false })
+  qqOpenid?: string;
 }
 
 export const UserSensitiveInfo = { password: 0, accessLevel: 0, lastLoginTime: 0, githubId: 0, githubNodeId: 0 };

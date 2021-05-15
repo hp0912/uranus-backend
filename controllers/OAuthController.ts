@@ -17,4 +17,13 @@ export class OAuthController {
     await this.autnService.githubOAuth(ctx, code);
     return { code: 200, message: '', data: null };
   }
+
+  @Get('/qq')
+  async qqOAuth(
+    @Ctx() ctx,
+    @QueryParam('code') code: string,
+  ): Promise<IHttpResult<null>> {
+    await this.autnService.qqOAuth(ctx, code);
+    return { code: 200, message: '', data: null };
+  }
 }
